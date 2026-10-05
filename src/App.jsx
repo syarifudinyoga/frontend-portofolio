@@ -1,20 +1,64 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import AdminPortal from './AdminPortal.jsx'
+import { lines, resolveTexts } from './uiTexts.js'
 
-const pages = [
-  { id: 'about', label: 'Tentang', number: '01' },
-  { id: 'journey', label: 'Perjalanan', number: '02' },
-  { id: 'work', label: 'Karya pilihan', number: '03' },
-  { id: 'skills', label: 'Keahlian', number: '04' },
-  { id: 'education', label: 'Pendidikan', number: '05' },
+const pageDefs = [
+  { id: 'about', labelKey: 'pageAbout', number: '01' },
+  { id: 'education', labelKey: 'pageEducation', number: '02' },
+  { id: 'skills', labelKey: 'pageSkills', number: '03' },
+  { id: 'journey', labelKey: 'pageJourney', number: '04' },
+  { id: 'work', labelKey: 'pageWork', number: '05' },
+  { id: 'closing', labelKey: 'pageClosing', number: '06' },
 ]
 
 function App() {
+  const isAdminRoute = window.location.pathname.replace(/\/+$/, '') === '/myconfig'
   const [portfolio, setPortfolio] = useState(null)
   const [error, setError] = useState('')
   const [active, setActive] = useState(0)
   const [opened, setOpened] = useState(false)
+  const [opening, setOpening] = useState(false)
+  const touchStartY = useRef(null)
+  const openTimer = useRef(null)
+
+  useEffect(() => () => window.clearTimeout(openTimer.current), [])
+
+  function openBook() {
+    if (opened || opening) return
+    setOpening(true)
+    openTimer.current = window.setTimeout(() => {
+      setOpened(true)
+      setOpening(false)
+    }, 1650)
+  }
+
+  function handleCoverWheel(event) {
+    if (event.deltaY <= 18) return
+    event.preventDefault()
+    openBook()
+  }
+
+  function handleCoverTouchStart(event) {
+    touchStartY.current = event.touches[0]?.clientY ?? null
+  }
+
+  function handleCoverTouchEnd(event) {
+    const endY = event.changedTouches[0]?.clientY
+    if (touchStartY.current !== null && endY !== undefined && touchStartY.current - endY > 45) {
+      openBook()
+    }
+    touchStartY.current = null
+  }
+
+  function connectionMessage(cause) {
+    if (cause instanceof TypeError) {
+      return `Backend tidak terhubung. Pastikan Go API berjalan di localhost:3004. Detail: ${cause.message}`
+    }
+    return cause.message
+  }
 
   useEffect(() => {
+    if (isAdminRoute) return undefined
     const controller = new AbortController()
     fetch('/api/portfolio', { signal: controller.signal })
       .then((response) => {
@@ -23,10 +67,10 @@ function App() {
       })
       .then(setPortfolio)
       .catch((cause) => {
-        if (cause.name !== 'AbortError') setError(cause.message)
+        if (cause.name !== 'AbortError') setError(connectionMessage(cause))
       })
     return () => controller.abort()
-  }, [])
+  }, [isAdminRoute])
 
   const groupedSkills = useMemo(() => {
     if (!portfolio) return []
@@ -39,6 +83,8 @@ function App() {
     )
   }, [portfolio])
 
+  if (isAdminRoute) return <AdminPortal />
+
   function turnPage(index) {
     setActive(Math.max(0, Math.min(pages.length - 1, index)))
     setOpened(true)
@@ -48,9 +94,9 @@ function App() {
     return (
       <main className="state-screen">
         <div className="state-card">
-          <span className="eyebrow">BUKU BELUM BISA DIBUKA</span>
-          <h1>Ada yang perlu diperiksa.</h1>
-          <p>Data portofolio gagal dimuat dari server. Coba muat ulang beberapa saat lagi.</p>
+          <span className="eyebrow">KONEKSI BACKEND GAGAL</span>
+          <h1>Backend tidak terhubung.</h1>
+          <p>Periksa log Go API di terminal tempat backend dijalankan, lalu coba lagi.</p>
           <button className="button button-dark" onClick={() => window.location.reload()}>Muat ulang</button>
           <small className="error-detail">{error}</small>
         </div>
@@ -59,43 +105,19 @@ function App() {
   }
 
   if (!portfolio) {
-    return <main className="state-screen"><div className="loading-book"><span className="book-mark">✳</span><p>Menyiapkan halaman cerita...</p></div></main>
+    return <main className="state-screen"><div className="loading-book"><span className="book-mark">✳</span><p>Menghubungkan ke backend lokal...</p></div></main>
   }
 
-  const { profile, experiences, education, projects, techStack } = portfolio
+  const { profile, experiences, education, certifications = [], projects, techStack } = portfolio
+  const t = resolveTexts(portfolio.texts)
+  const pages = pageDefs.map((page) => ({ ...page, label: t[page.labelKey] }))
   const currentPage = pages[active]
 
-  return (
-    <main className="site-shell">
-      <header className="topbar">
-        <a className="brand" href="#home" onClick={() => { setOpened(false); setActive(0) }} aria-label="Kembali ke sampul">
-          <span className="brand-mark">✳</span><span>CATATAN<br />PERJALANAN</span>
-        </a>
-        <div className="topbar-note"><span className="status-dot" /> PORTFOLIO DIGITAL <span className="topbar-divider">/</span> EDISI 2025</div>
-        <a className="contact-link" href={`mailto:${profile.email}`}>Sapa saya <span aria-hidden="true">↗</span></a>
-      </header>
-
-      {!opened ? (
-        <section id="home" className="cover-stage">
-          <div className="cover-caption"><span>SEBUAH BUKU TENTANG</span><span>IDE, PROSES &amp; PERJALANAN</span></div>
-          <button className="book-cover" onClick={() => setOpened(true)} aria-label="Buka buku portofolio">
-            <span className="cover-spine" />
-            <span className="cover-topline">PORTFOLIO / VOL. 01 <span>2025—NOW</span></span>
-            <span className="cover-star">✳</span>
-            <span className="cover-title">The<br /><i>making</i><br />of things.</span>
-            <span className="cover-bottom">
-              <span><b>{profile.name}</b><small>{profile.role}</small></span>
-              <span className="cover-open">BUKA BUKU <b>↗</b></span>
-            </span>
-          </button>
-          <div className="cover-aside"><span className="vertical-label">SCROLL SLOWLY, STAY AWHILE</span><span className="aside-line" /></div>
-          <div className="cover-footer"><span>{profile.location}</span><span>01 — 05 <span className="footer-spark">✳</span></span></div>
-        </section>
-      ) : (
-        <div className="reading-layout">
+  const readingLayout = (
+    <div className="reading-layout">
           <aside className="chapter-rail">
-            <button className="back-cover" onClick={() => setOpened(false)} aria-label="Kembali ke sampul">← <span>SAMPUL</span></button>
-            <span className="rail-label">DAFTAR ISI</span>
+            <button className="back-cover" onClick={() => setOpened(false)} aria-label="Kembali ke sampul">← <span>{t.backLabel}</span></button>
+            <span className="rail-label">{t.tocLabel}</span>
             <nav aria-label="Daftar isi buku">
               {pages.map((page, index) => (
                 <button key={page.id} className={`chapter-link ${active === index ? 'is-active' : ''}`} onClick={() => turnPage(index)}>
@@ -103,27 +125,71 @@ function App() {
                 </button>
               ))}
             </nav>
-            <div className="rail-bottom"><span className="book-mark">✳</span><span>VOL. 01<br />2025—NOW</span></div>
+            <div className="rail-bottom"><span className="book-mark">✳</span><span>{t.railVol}<br />{t.railYear}</span></div>
           </aside>
           <section className="page-wrap" key={currentPage.id}>
-            <div className="page-topline"><span>CATATAN PERJALANAN</span><span>{currentPage.number} <i>/</i> 05</span></div>
+            <div className="page-topline"><span>{t.pageTopline}</span><span>{currentPage.number} <i>/</i> 06</span></div>
             <div className="page-content">
               {active === 0 && <AboutPage profile={profile} onNext={() => turnPage(1)} />}
-              {active === 1 && <JourneyPage experiences={experiences} />}
-              {active === 2 && <WorkPage projects={projects} />}
-              {active === 3 && <SkillsPage groups={groupedSkills} techStack={techStack} />}
-              {active === 4 && <EducationPage education={education} profile={profile} />}
+              {active === 1 && <EducationPage education={education} certifications={certifications} />}
+              {active === 2 && <SkillsPage groups={groupedSkills} techStack={techStack} />}
+              {active === 3 && <JourneyPage experiences={experiences} />}
+              {active === 4 && <WorkPage projects={projects} />}
+              {active === 5 && <ClosingPage profile={profile} t={t} />}
             </div>
             <footer className="page-footer">
               <span>{profile.location}</span>
               <div className="page-controls">
                 <button onClick={() => turnPage(active - 1)} disabled={active === 0} aria-label="Halaman sebelumnya">←</button>
-                <span>{currentPage.number} <i>/</i> 05</span>
+                <span>{currentPage.number} <i>/</i> 06</span>
                 <button onClick={() => turnPage(active + 1)} disabled={active === pages.length - 1} aria-label="Halaman berikutnya">→</button>
               </div>
             </footer>
           </section>
         </div>
+  )
+
+  return (
+    <main className="site-shell">
+      <header className="topbar">
+        <a className="brand" href="#home" onClick={() => { setOpened(false); setActive(0) }} aria-label="Kembali ke sampul">
+          <span className="brand-mark">✳</span><span>{lines(t.brand)}</span>
+        </a>
+        <div className="topbar-note"><span className="status-dot" /> {t.topbarLeft} <span className="topbar-divider">/</span> {t.topbarRight}</div>
+        <a className="contact-link" href={`mailto:${profile.email}`}>{t.contactLabel} <span aria-hidden="true">↗</span></a>
+      </header>
+
+      {!opened ? (
+        <section
+          id="home"
+          className={`cover-stage ${opening ? 'is-opening' : ''}`}
+          onWheel={handleCoverWheel}
+          onTouchStart={handleCoverTouchStart}
+          onTouchEnd={handleCoverTouchEnd}
+        >
+          <div className="cover-caption"><span>{t.coverCaption1}</span><span>{t.coverCaption2}</span></div>
+          <div className="book-3d">
+            <div className="book-pages" aria-hidden="true"><span className="pages-mark">✳</span><span className="pages-note">{lines(t.coverInner)}</span><span className="pages-number">01</span></div>
+            <div className="cover-flip">
+              <button className="book-cover" onClick={openBook} aria-label="Buka buku portofolio">
+            <span className="cover-spine" />
+            <span className="cover-topline">{t.coverTopline} <span>{t.coverYear}</span></span>
+            <span className="cover-star">✳</span>
+            <span className="cover-title">{t.coverTitle1}<br /><i>{t.coverTitle2}</i><br />{t.coverTitle3}</span>
+            <span className="cover-bottom">
+              <span><b>{profile.name}</b><small>{profile.role}</small></span>
+              <span className="cover-open">{t.coverOpen} <b>↗</b></span>
+            </span>
+          </button>
+              <div className="cover-back" aria-hidden="true"><span>{t.exLibris}<br />— {profile.name} —</span></div>
+            </div>
+          </div>
+          {opening && <div className="peek-layout" aria-hidden="true" inert="">{readingLayout}</div>}
+          <div className="cover-aside"><span className="vertical-label">{t.coverAside}</span><span className="aside-line" /></div>
+          <div className="cover-footer"><span>{profile.location}</span><span className="scroll-hint">{t.coverScrollHint} <b>↓</b></span><span>01 — 06 <span className="footer-spark">✳</span></span></div>
+        </section>
+      ) : (
+        readingLayout
       )}
     </main>
   )
@@ -138,7 +204,7 @@ function AboutPage({ profile, onNext }) {
           <p className="chapter-intro">Halo, saya <span>{profile.name.split(' ')[0]}.</span></p>
           <h1>{profile.headline}</h1>
           <p className="body-copy">{profile.about}</p>
-          <button className="text-button" onClick={onNext}>Lihat perjalanan saya <span>↗</span></button>
+          <button className="text-button" onClick={onNext}>Lihat pendidikan saya <span>↗</span></button>
         </div>
         <div className="portrait-card">
           {profile.avatarUrl ? <img src={profile.avatarUrl} alt={`Potret ${profile.name}`} /> : <div className="portrait-placeholder"><span>{profile.name.split(' ').map((word) => word[0]).slice(0, 2).join('')}</span><i>Ganti foto<br />profil Anda</i></div>}
@@ -153,7 +219,7 @@ function AboutPage({ profile, onNext }) {
         {profile.website && <div><span>WEBSITE</span><a href={profile.website} target="_blank" rel="noreferrer">Kunjungi ↗</a></div>}
         {profile.resumeUrl && <div><span>RESUME</span><a href={profile.resumeUrl} target="_blank" rel="noreferrer">Lihat resume ↗</a></div>}
       </div>
-      <div className="margin-note">CATATAN<br />01 — 05</div>
+      <div className="margin-note">CATATAN<br />01 — 06</div>
     </article>
   )
 }
@@ -227,10 +293,10 @@ function SkillsPage({ groups, techStack }) {
   )
 }
 
-function EducationPage({ education, profile }) {
+function EducationPage({ education, certifications }) {
   return (
-    <article className="page page-last">
-      <div className="section-kicker"><span>05 / AKAR &amp; ARAH</span><span className="kicker-line" /></div>
+    <article className="page">
+      <div className="section-kicker"><span>02 / AKAR &amp; ARAH</span><span className="kicker-line" /></div>
       <p className="chapter-intro">Terus belajar,</p><h1>selalu ada bab baru.</h1>
       <div className="education-list">{education.map((item) => (
         <article className="education-card" key={item.id}>
@@ -239,10 +305,53 @@ function EducationPage({ education, profile }) {
           <span className="education-mark">✳</span>
         </article>
       ))}</div>
-      <div className="closing-card"><span>UJUNG HALAMAN?</span><h2>Belum. Mari mulai<br /><i>cerita yang baru.</i></h2><a href={`mailto:${profile.email}`}>KIRIM PESAN <span>↗</span></a></div>
+      {certifications.length > 0 && (
+        <>
+          <div className="group-label cert-label">SERTIFIKASI</div>
+          <div className="education-list cert-list">{certifications.map((item) => (
+            <article className="education-card" key={item.id}>
+              <span className="education-year">{item.issuedDate ? formatDate(item.issuedDate) : '—'}</span>
+              <div><h2>{item.name}</h2>{item.issuer && <p>{item.issuer}</p>}</div>
+              {item.credentialUrl ? <a className="education-mark cert-link" href={item.credentialUrl} target="_blank" rel="noreferrer" aria-label={`Lihat sertifikat ${item.name}`}>↗</a> : <span className="education-mark">✳</span>}
+            </article>
+          ))}</div>
+        </>
+      )}
+    </article>
+  )
+}
+
+function ClosingPage({ profile, t }) {
+  const links = [
+    { label: 'Email', href: profile.email && `mailto:${profile.email}`, text: profile.email },
+    { label: 'GitHub', href: profile.githubUrl },
+    { label: 'Instagram', href: profile.instagramUrl },
+    { label: 'Twitter', href: profile.twitterUrl },
+    { label: 'LinkedIn', href: profile.linkedinUrl },
+  ].filter((item) => item.href)
+  return (
+    <article className="page page-last">
+      <div className="section-kicker"><span>06 / PENUTUP</span><span className="kicker-line" /></div>
+      <p className="chapter-intro">{t.closingIntro}</p>
+      <h1 className="closing-title">{t.closingTitle1}<br /><i>{t.closingTitle2}</i></h1>
+      <div className="social-list">{links.map((item) => (
+        <a key={item.label} href={item.href} {...(item.label === 'Email' ? {} : { target: '_blank', rel: 'noreferrer' })}>
+          <span>{item.label.toUpperCase()}</span><b>{item.text || handleFromUrl(item.href)}</b><i aria-hidden="true">↗</i>
+        </a>
+      ))}</div>
       <div className="margin-note">SAMPAI JUMPA</div>
     </article>
   )
+}
+
+function handleFromUrl(url) {
+  try {
+    const parts = new URL(url).pathname.split('/').filter(Boolean)
+    const name = parts[parts.length - 1]
+    return name ? `@${name.replace(/^@/, '')}` : new URL(url).hostname
+  } catch {
+    return url
+  }
 }
 
 function formatDate(value) {

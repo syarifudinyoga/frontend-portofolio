@@ -1,25 +1,20 @@
 # Portfolio Web — React + Vite
 
-Frontend independen untuk portfolio buku perjalanan. Semua detail visual dan interaksi berada di React; konten dimuat lewat endpoint `/api/portfolio`. Nginx melayani aplikasi dan reverse proxy `/api/` ke backend yang ditentukan saat container dijalankan.
+Frontend independen untuk portfolio buku perjalanan. Semua detail visual dan interaksi berada di React; konten dimuat lewat endpoint `/api/portfolio`. Mode lokal menggunakan Vite untuk meneruskan request `/api` ke Go backend.
 
-## Jalankan lokal
+## Jalankan lokal (tanpa container)
 
-1. Salin `.env.example` menjadi `.env`. Isi `GHCR_OWNER`; pastikan `API_UPSTREAM` menunjuk ke alamat API yang dapat dijangkau dari container web. Pada Podman, `host.containers.internal` biasanya tersedia; pada Docker/Linux, gunakan IP/domain homeserver atau konfigurasi host gateway yang sesuai.
-2. Jalankan `podman compose up --build` (atau gunakan `docker compose`).
-3. Buka `http://localhost:8088`.
-
-Migration dan isi data portfolio dimiliki repository backend.
-
-### Development dengan Vite
-
-Jalankan API backend di `localhost:8080`, kemudian dari direktori frontend:
+Frontend dan API jalan di komputer lokal; PostgreSQL lokal harus aktif dan API Go dijalankan di `http://127.0.0.1:3004`.
 
 ```sh
+cp .env.example .env
 npm ci
 npm run dev
 ```
 
-Vite meneruskan request `/api` ke backend lokal.
+Buka `http://127.0.0.1:3005`. Vite membaca `.env` lokal dan meneruskan request `/api` ke Go API; browser tidak perlu mengakses PostgreSQL langsung dan tidak perlu konfigurasi CORS. Halaman pengelolaan data tersedia lewat URL manual `http://127.0.0.1:3005/myconfig`, lalu masukkan `ADMIN_KEY` yang diatur di `.env` backend. Migration dan isi data portfolio dimiliki repository backend.
+
+Di sampul, klik buku atau scroll ke bawah untuk membuka spread dua halaman; di perangkat sentuh, swipe ke atas juga membuka buku.
 
 ## Build dan publikasi
 

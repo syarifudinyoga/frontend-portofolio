@@ -9,4 +9,4 @@ services:
       API_UPSTREAM: ${API_UPSTREAM:?Set API_UPSTREAM in .env}
       NGINX_ENVSUBST_FILTER: ^API_UPSTREAM$
     ports:
-      - "${WEB_PORT:-8088}:80"
+      - "${WEB_PORT:-3005}:80"
