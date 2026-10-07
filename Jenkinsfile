@@ -201,7 +201,8 @@ REMOTE
             ssh -o StrictHostKeyChecking=yes \
               ${VPS_USER}@${VPS_HOST} \
               "cd ${VPS_DIR} && \
-               GHCR_NAMESPACE=${GHCR_NAMESPACE} VERSION=${VERSION} ${PODMAN_COMPOSE} up -d --no-deps --force-recreate frontend"
+               podman rm -f portfolio-frontend 2>/dev/null || true; \
+               GHCR_NAMESPACE=${GHCR_NAMESPACE} VERSION=${VERSION} ${PODMAN_COMPOSE} up -d frontend"
           '''
         }
       }
