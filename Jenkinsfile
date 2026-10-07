@@ -9,8 +9,8 @@ pipeline {
   parameters {
     string(
       name: 'VERSION',
-      defaultValue: 'latest',
-      description: 'Image tag version (e.g. latest, v1.0.0, etc.)',
+      defaultValue: '1.0.0',
+      description: 'Image tag version (e.g. 1.0.0, 1.0.1, 2.0.0, etc.)',
       trim: true
     )
     string(
@@ -82,7 +82,6 @@ pipeline {
               --platform linux/amd64,linux/arm64 \
               --push \
               --tag "ghcr.io/${GHCR_NAMESPACE}/${FRONTEND_IMAGE}:${VERSION}" \
-              --tag "ghcr.io/${GHCR_NAMESPACE}/${FRONTEND_IMAGE}:latest" \
               --file Containerfile \
               .
           '''
@@ -205,9 +204,6 @@ REMOTE
               trap "podman logout ghcr.io >/dev/null 2>&1 || true" EXIT
               echo "Pulling image ghcr.io/$3/portfolio-frontend:$4..."
               podman pull "ghcr.io/$3/portfolio-frontend:$4"
-              if [ "$4" != "latest" ]; then
-                podman pull "ghcr.io/$3/portfolio-frontend:latest" 2>/dev/null || podman tag "ghcr.io/$3/portfolio-frontend:$4" "ghcr.io/$3/portfolio-frontend:latest" || true
-              fi
               cd "$2"
               GHCR_NAMESPACE="$3" VERSION="$4" "$HOME/.local/bin/podman-compose" pull frontend || true'
 
