@@ -82,6 +82,7 @@ pipeline {
               --platform linux/amd64,linux/arm64 \
               --push \
               --tag "ghcr.io/${GHCR_NAMESPACE}/${FRONTEND_IMAGE}:${VERSION}" \
+              --tag "ghcr.io/${GHCR_NAMESPACE}/${FRONTEND_IMAGE}:latest" \
               --file Containerfile \
               .
           '''
@@ -128,6 +129,23 @@ REMOTE
       }
     }
 
+    stage('Ensure Network') {
+      steps {
+        sshagent([env.SSH_CREDENTIAL]) {
+          sh '''
+            ssh -o StrictHostKeyChecking=yes ${VPS_USER}@${VPS_HOST} "bash -s" <<'REMOTE'
+set -eu
+NETWORK="portfolio_default"
+if ! podman network exists "$NETWORK"; then
+  echo "Creating podman network $NETWORK..."
+  podman network create "$NETWORK"
+fi
+REMOTE
+          '''
+        }
+      }
+    }
+
     stage('Deploy Environment') {
       steps {
         script {
@@ -151,6 +169,7 @@ REMOTE
                   ssh -o StrictHostKeyChecking=yes \
                     ${VPS_USER}@${VPS_HOST} \
                     "chmod 600 ${VPS_DIR}/.env.new && \
+                     sed -i '/^VERSION=/d' ${VPS_DIR}/.env.new 2>/dev/null || true; \
                      mv -f ${VPS_DIR}/.env.new ${VPS_DIR}/.env && \
                      echo 'Frontend environment file successfully configured.'"
                 '''
@@ -184,8 +203,13 @@ REMOTE
               IFS= read -r TOKEN
               printf "%s" "$TOKEN" | podman login ghcr.io --username "$1" --password-stdin
               trap "podman logout ghcr.io >/dev/null 2>&1 || true" EXIT
+              echo "Pulling image ghcr.io/$3/portfolio-frontend:$4..."
+              podman pull "ghcr.io/$3/portfolio-frontend:$4"
+              if [ "$4" != "latest" ]; then
+                podman pull "ghcr.io/$3/portfolio-frontend:latest" 2>/dev/null || podman tag "ghcr.io/$3/portfolio-frontend:$4" "ghcr.io/$3/portfolio-frontend:latest" || true
+              fi
               cd "$2"
-              GHCR_NAMESPACE="$3" VERSION="$4" "$HOME/.local/bin/podman-compose" pull frontend'
+              GHCR_NAMESPACE="$3" VERSION="$4" "$HOME/.local/bin/podman-compose" pull frontend || true'
 
               printf '%s\n' "$GHCR_TOKEN" | ssh -T -o StrictHostKeyChecking=yes ${VPS_USER}@${VPS_HOST} "sh -c '$REMOTE_SCRIPT' sh $GHCR_USER $VPS_DIR $GHCR_NAMESPACE $VERSION"
             '''
