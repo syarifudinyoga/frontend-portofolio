@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { apiFetch } from './crypto.js'
+import { apiFetch, resolveMediaUrl } from './crypto.js'
 import { defaultTexts, uiTextFields } from './uiTexts.js'
 
 const emptyPortfolio = {
@@ -697,9 +697,9 @@ function MediaField({ field, value, onChange, adminKey }) {
       <div className="admin-image-row">
         {value && (
           isVideo ? (
-            <video className="admin-video-preview" src={value} controls muted playsInline />
+            <video className="admin-video-preview" src={resolveMediaUrl(value)} controls muted playsInline />
           ) : (
-            <img className="admin-image-preview" src={value} alt="" />
+            <img className="admin-image-preview" src={resolveMediaUrl(value)} alt="" />
           )
         )}
         <input

@@ -1,12 +1,18 @@
 services:
-  web:
-    image: ghcr.io/${GHCR_OWNER:?Set GHCR_OWNER in .env}/${IMAGE_NAME:-portfolio-web}:${IMAGE_TAG:-latest}
-    build:
-      context: .
-      dockerfile: Containerfile
-    restart: unless-stopped
-    environment:
-      API_UPSTREAM: ${API_UPSTREAM:?Set API_UPSTREAM in .env}
-      NGINX_ENVSUBST_FILTER: ^API_UPSTREAM$
+  frontend:
+    image: ghcr.io/${GHCR_NAMESPACE:?Set GHCR_NAMESPACE}/portfolio-frontend:${VERSION:-latest}
+    container_name: portfolio-frontend
+    hostname: frontend
     ports:
-      - "${WEB_PORT:-3005}:80"
+      - "127.0.0.1:3005:80"
+    environment:
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-}
+      - VITE_API_ENCRYPTION_SECRET=${VITE_API_ENCRYPTION_SECRET:-}
+    restart: unless-stopped
+    networks:
+      - portfolio_default
+
+networks:
+  portfolio_default:
+    name: portfolio_default
+    external: true

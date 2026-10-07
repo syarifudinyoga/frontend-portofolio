@@ -2,8 +2,34 @@ const DEFAULT_SECRET = 'portfolio-vault-key-2026-secure-secret-token'
 
 let cachedCryptoKey = null
 
+export function getApiBaseUrl() {
+  const envUrl =
+    (typeof window !== 'undefined' && window.__ENV__ && window.__ENV__.VITE_API_BASE_URL) ||
+    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) ||
+    ''
+  return String(envUrl).trim().replace(/\/+$/, '')
+}
+
+export function getApiUrl(path = '') {
+  if (!path) return ''
+  if (/^https?:\/\//i.test(path)) return path
+  const base = getApiBaseUrl()
+  if (!base) return path
+  const cleanPath = path.startsWith('/') ? path : `/${path}`
+  return `${base}${cleanPath}`
+}
+
+export function resolveMediaUrl(url) {
+  if (!url) return ''
+  if (/^(?:https?:\/\/|data:|blob:)/i.test(url)) return url
+  return getApiUrl(url)
+}
+
 function getSecret() {
   return (
+    (typeof window !== 'undefined' &&
+      window.__ENV__ &&
+      window.__ENV__.VITE_API_ENCRYPTION_SECRET) ||
     (typeof import.meta !== 'undefined' &&
       import.meta.env &&
       import.meta.env.VITE_API_ENCRYPTION_SECRET) ||
@@ -117,8 +143,8 @@ export async function apiFetch(url, options = {}) {
   }
 
   opts.headers = headers
-
-  const response = await fetch(url, opts)
+  const targetUrl = getApiUrl(url)
+  const response = await fetch(targetUrl, opts)
 
   if (response.status === 204) {
     return null

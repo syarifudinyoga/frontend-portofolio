@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import AdminPortal from './AdminPortal.jsx'
-import { apiFetch } from './crypto.js'
+import { apiFetch, resolveMediaUrl } from './crypto.js'
 import { lines, localizePortfolio, resolveTexts } from './uiTexts.js'
 
 const pageDefs = [
@@ -266,7 +266,7 @@ function AboutPage({ profile, onNext, t }) {
           <button className="text-button" onClick={onNext}>{t.aboutNextBtn} <span>↗</span></button>
         </div>
         <div className="portrait-card">
-          {profile.avatarUrl ? <img src={profile.avatarUrl} alt={`Potret ${profile.name}`} /> : <div className="portrait-placeholder"><span>{profile.name.split(' ').map((word) => word[0]).slice(0, 2).join('')}</span><i>{lines(t.aboutChangePhoto)}</i></div>}
+          {profile.avatarUrl ? <img src={resolveMediaUrl(profile.avatarUrl)} alt={`Potret ${profile.name}`} /> : <div className="portrait-placeholder"><span>{profile.name.split(' ').map((word) => word[0]).slice(0, 2).join('')}</span><i>{lines(t.aboutChangePhoto)}</i></div>}
           <span className="portrait-index">{t.aboutFig}</span>
           <span className="portrait-stamp">{lines(t.aboutOpenToIdeas)}</span>
         </div>
@@ -319,8 +319,8 @@ function ProjectCard({ project, index, t, onSelectProject }) {
         {project.videoUrl ? (
           <div className="project-video-wrapper">
             <video
-              src={project.videoUrl}
-              poster={project.imageUrl || undefined}
+              src={resolveMediaUrl(project.videoUrl)}
+              poster={project.imageUrl ? resolveMediaUrl(project.imageUrl) : undefined}
               muted
               loop
               playsInline
@@ -330,7 +330,7 @@ function ProjectCard({ project, index, t, onSelectProject }) {
             <span className="project-media-badge">▶ {t.workVideoBadge}</span>
           </div>
         ) : project.imageUrl ? (
-          <img src={project.imageUrl} alt={`Pratinjau ${project.title}`} loading="lazy" />
+          <img src={resolveMediaUrl(project.imageUrl)} alt={`Pratinjau ${project.title}`} loading="lazy" />
         ) : (
           <div className="project-art-placeholder">
             <span>{String(index + 1).padStart(2, '0')}</span>
@@ -664,7 +664,7 @@ function ProjectPreviewModal({ project, initialTab = 'iframe', onClose, t }) {
                   <div className="media-video-container">
                     <span className="media-section-badge">🎬 {t.workVideoBadge}</span>
                     <video
-                      src={project.videoUrl}
+                      src={resolveMediaUrl(project.videoUrl)}
                       controls
                       autoPlay
                       muted
@@ -675,7 +675,7 @@ function ProjectPreviewModal({ project, initialTab = 'iframe', onClose, t }) {
                 )}
                 {project.imageUrl && (
                   <div className="media-image-container">
-                    <img src={project.imageUrl} alt={project.title} className="media-image-preview" />
+                    <img src={resolveMediaUrl(project.imageUrl)} alt={project.title} className="media-image-preview" />
                   </div>
                 )}
                 {!project.videoUrl && !project.imageUrl && (
