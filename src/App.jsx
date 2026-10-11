@@ -122,7 +122,7 @@ function App() {
 
   if (!portfolio || !localizedPortfolio) {
     const tLoading = resolveTexts({}, lang)
-    return <main className="state-screen"><div className="loading-book"><span className="book-mark">✳</span><p>{tLoading.loadingText}</p></div></main>
+    return <main className="state-screen"><div className="loading-book"><img className="book-mark" src="/logo.svg" alt="" aria-hidden="true" /><p>{tLoading.loadingText}</p></div></main>
   }
 
   const { profile, experiences, education, certifications = [], projects, techStack } = localizedPortfolio
@@ -147,7 +147,7 @@ function App() {
             </button>
           ))}
         </nav>
-        <div className="rail-bottom"><span className="book-mark">✳</span><span>{t.railVol}<br />{t.railYear}</span></div>
+        <div className="rail-bottom"><img className="book-mark" src="/logo.svg" alt="" aria-hidden="true" /><span>{t.railVol}<br />{t.railYear}</span></div>
       </aside>
       <section className="page-wrap" key={currentPage.id}>
         <div className="page-topline"><span>{t.pageTopline}</span><span>{currentPage.number} <i>/</i> 06</span></div>
@@ -175,7 +175,7 @@ function App() {
     <main className="site-shell">
       <header className="topbar">
         <a className="brand" href="#home" onClick={() => { setOpened(false); setActive(0) }} aria-label={t.brandAria}>
-          <span className="brand-mark">✳</span><span>{lines(t.brand)}</span>
+          <img className="brand-mark" src="/logo.svg" alt="" aria-hidden="true" /><span>{lines(t.brand)}</span>
         </a>
         <div className="topbar-note"><span className="status-dot" /> {t.topbarLeft} <span className="topbar-divider">/</span> {t.topbarRight}</div>
         <div className="topbar-actions">
@@ -637,7 +637,7 @@ function ProjectPreviewModal({ project, initialTab = 'iframe', onClose, t }) {
             <div className="iframe-stage">
               {iframeLoading && (
                 <div className="iframe-loader">
-                  <span className="book-mark">✳</span>
+                  <img className="book-mark" src="/logo.svg" alt="" aria-hidden="true" />
                   <p>{t.loadingText}</p>
                 </div>
               )}
@@ -680,7 +680,7 @@ function ProjectPreviewModal({ project, initialTab = 'iframe', onClose, t }) {
                 )}
                 {!project.videoUrl && !project.imageUrl && (
                   <div className="media-empty-placeholder">
-                    <span className="book-mark">✳</span>
+                    <img className="book-mark" src="/logo.svg" alt="" aria-hidden="true" />
                     <p>{t.workNoMedia}</p>
                   </div>
                 )}

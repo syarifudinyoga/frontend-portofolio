@@ -23,7 +23,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--rust); outline-
 .site-shell { min-height: 100vh; padding: 0 5.55vw; overflow: clip; }
 .topbar { height: 94px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
 .brand { display: flex; gap: 11px; align-items: center; font: 500 9px/1.35 var(--mono); letter-spacing: .06em; }
-.brand-mark, .book-mark { font-size: 24px; color: var(--rust); }
+.brand-mark, .book-mark { display: block; width: 24px; height: 24px; object-fit: contain; }
 .topbar-note, .contact-link, .cover-caption, .cover-topline, .cover-open, .cover-footer, .page-topline, .page-footer, .section-kicker, .rail-label, .chapter-link, .back-cover, .about-meta > div > span, .portrait-index, .margin-note, .timeline-date, .item-location, .project-info > div > span, .project-year, .project-links, .group-label, .tech-group > span, .education-year, .closing-card > span, .closing-card > a, .state-card .eyebrow { font: 10px var(--mono); letter-spacing: .07em; }
 .topbar-note { color: var(--muted); display: flex; align-items: center; gap: 10px; }
 .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--olive); display: inline-block; }
@@ -61,7 +61,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--rust); outline-
 .scroll-hint b { font: 15px var(--serif); animation: scroll-cue 1.25s ease-in-out infinite; }
 .cover-spine { position: absolute; top: 0; bottom: 0; left: 25px; width: 1px; background: #f5d7b346; }
 .cover-topline { display: flex; justify-content: space-between; color: #f1d1b3; font-size: 8px; }
-.cover-star { position: absolute; right: 39px; top: 93px; font-size: 35px; color: #e2b88b; animation: slow-spin 24s linear infinite; }
+.cover-star { position: absolute; right: 39px; top: 93px; font-size: 35px; color: #e2b88b; }
 .cover-title { font: 600 clamp(53px, 6.4vw, 85px)/.95 var(--serif); letter-spacing: -.055em; margin-top: 23px; }
 .cover-title i { font-weight: 500; color: #e9cda7; }
 .cover-bottom { display: flex; justify-content: space-between; align-items: end; }
@@ -87,7 +87,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--rust); outline-
 .chapter-link.is-active { color: var(--ink); font-weight: 600; }
 .chapter-link.is-active > span { color: var(--rust); }
 .rail-bottom { margin-top: auto; display: flex; align-items: center; gap: 10px; color: var(--muted); font: 8px/1.7 var(--mono); }
-.rail-bottom .book-mark { font-size: 20px; }
+.rail-bottom .book-mark { width: 20px; height: 20px; }
 .page-wrap { min-width: 0; display: flex; flex-direction: column; padding-left: clamp(30px, 7vw, 92px); }
 .page-topline { height: 64px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 8px; }
 .page-topline i, .page-footer i { color: #c1bbaa; font-style: normal; padding: 0 4px; }
@@ -188,7 +188,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--rust); outline-
 .empty-note { color: var(--muted); font: italic 17px var(--serif); padding: 22px 0; }
 .state-screen { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
 .loading-book { text-align: center; color: var(--muted); font: 11px var(--mono); }
-.loading-book .book-mark { display: inline-block; font-size: 42px; animation: slow-spin 5s linear infinite; }
+.loading-book .book-mark { width: 42px; height: 42px; margin: 0 auto; }
 .state-card { max-width: 430px; padding: 42px; background: var(--paper); border: 1px solid var(--line); box-shadow: 0 18px 40px #50493113; }
 .state-card .eyebrow { color: var(--rust); font-size: 8px; }
 .state-card h1 { font: 500 35px var(--serif); margin: 15px 0 10px; }
@@ -198,7 +198,6 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--rust); outline-
 .error-detail { display: block; margin-top: 20px; color: #a09a8c; font: 9px var(--mono); }
 @keyframes cover-arrive { from { opacity: 0; translate: 0 16px; } to { opacity: 1; translate: 0 0; } }
 @keyframes page-in { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes slow-spin { to { transform: rotate(360deg); } }
 @keyframes scroll-cue { 0%, 100% { transform: translateY(-2px); } 50% { transform: translateY(3px); } }
 @keyframes page-settle-left { 0% { transform: rotateY(15deg); } 55% { transform: rotateY(-4deg); } 100% { transform: rotateY(0); } }
 @keyframes page-settle-right { 0% { transform: rotateY(-12deg); } 55% { transform: rotateY(3deg); } 100% { transform: rotateY(0); } }
@@ -445,11 +444,11 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--rust); outline-
 .chapter-link > span { font-size: 11px; }
 .rail-bottom { font-size: 12px; line-height: 1.7; gap: 10px; }
 .rail-bottom span { font: 12px/1.7 var(--mono); letter-spacing: .07em; }
-.rail-bottom .book-mark { font-size: 22px; }
+.rail-bottom .book-mark { width: 22px; height: 22px; }
 .back-cover span { font-size: 12px; }
 
 .brand { font: 500 14px/1.35 var(--mono); }
-.brand-mark { font-size: 26px; }
+.brand-mark { width: 26px; height: 26px; }
 .topbar-note, .contact-link { font-size: 14px; }
 .contact-link span { font-size: 18px; }
 .cover-caption, .cover-aside .vertical-label, .cover-footer { font-size: 13px; }
@@ -1131,4 +1130,3 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--rust); outline-
     grid-template-columns: 1fr 1fr;
   }
 }
-
