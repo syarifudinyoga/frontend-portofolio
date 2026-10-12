@@ -92,6 +92,9 @@ function App() {
   }, [isAdminRoute])
 
   const localizedPortfolio = useMemo(() => localizePortfolio(portfolio, lang), [portfolio, lang])
+  const selectedProject = previewProject
+    ? localizedPortfolio?.projects.find((project) => project.id === previewProject.id)
+    : null
 
   const groupedSkills = useMemo(() => {
     if (!localizedPortfolio) return []
@@ -157,7 +160,7 @@ function App() {
           {active === 1 && <EducationPage education={education} certifications={certifications} t={t} lang={lang} />}
           {active === 2 && <SkillsPage groups={groupedSkills} techStack={techStack} t={t} />}
           {active === 3 && <JourneyPage experiences={experiences} t={t} lang={lang} />}
-          {active === 4 && <WorkPage projects={projects} t={t} onSelectProject={(proj, tab) => setPreviewProject({ ...proj, initialTab: tab || 'media' })} />}
+          {active === 4 && <WorkPage projects={projects} t={t} onSelectProject={(proj, tab) => setPreviewProject({ id: proj.id, initialTab: tab || 'media' })} />}
           {active === 5 && <ClosingPage profile={profile} t={t} />}
         </div>
         <footer className="page-footer">
@@ -238,9 +241,9 @@ function App() {
         readingLayout
       )}
 
-      {previewProject && (
+      {selectedProject && (
         <ProjectPreviewModal
-          project={previewProject}
+          project={selectedProject}
           initialTab={previewProject.initialTab}
           onClose={() => setPreviewProject(null)}
           t={t}
