@@ -84,11 +84,6 @@ const listSections = [
     key: 'techStack',
     title: 'Tech stack',
     addLabel: 'Tambah teknologi',
-    create: () => ({ name: '', category: '' }),
-    fields: [
-      { key: 'name', label: 'Nama teknologi', required: true },
-      { key: 'category', label: 'Kategori', required: true },
-    ],
   },
   {
     key: 'projects',
@@ -102,8 +97,8 @@ const listSections = [
         type: 'select',
         isWide: true,
         options: [
-          { value: 'personal', label: '💡 Projek Pribadi (Personal / Side Project)' },
-          { value: 'work', label: '🏢 Projek Kantor (Enterprise / Company)' },
+          { value: 'personal', label: 'Projek Pribadi' },
+          { value: 'work', label: 'Projek Kantor' },
         ],
       },
       { key: 'title', label: 'Judul project', required: true },
@@ -114,7 +109,7 @@ const listSections = [
       { key: 'videoUrl', label: 'Video demo (URL atau upload MP4/WebM)', type: 'video' },
       { key: 'liveUrl', label: 'URL live demo (bisa dibuka langsung di iframe)', type: 'url' },
       { key: 'repoUrl', label: 'URL repository (GitHub dsb)', type: 'url' },
-      { key: 'tech', label: 'Teknologi (satu per baris)', lines: true, multiline: true },
+      { key: 'tech', label: 'Teknologi project' },
     ],
   },
 ]
@@ -614,29 +609,47 @@ export default function AdminPortal() {
         {listSections.map((section, sectionIndex) => (
           <section className="admin-section" key={section.key}>
             <div className="admin-section-heading"><span>{String(sectionIndex + 3).padStart(2, '0')}</span><div><h2>{section.title}</h2><p>Tambah, ubah, atau hapus entri yang ditampilkan di portfolio.</p></div></div>
-            <div className="admin-item-list">
-              {data[section.key].map((item, index) => (
-                <article className="admin-item-card" key={`${section.key}-${index}`}>
-                  <div className="admin-item-topline">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span>ENTRI {String(index + 1).padStart(2, '0')}</span>
-                      {section.key === 'projects' && (
-                        <span className={`admin-type-badge ${item.projectType === 'personal' ? 'is-personal' : 'is-work'}`}>
-                          {item.projectType === 'personal' ? '💡 PRIBADI' : '🏢 KANTOR'}
-                        </span>
-                      )}
-                    </div>
-                    <button className="admin-remove-button" type="button" onClick={() => removeItem(section.key, index)}>HAPUS ×</button>
-                  </div>
-                  <div className="admin-form-grid">
-                    {section.fields.map((field) => (
-                      <EditorField adminKey={key} key={field.key} field={field} value={field.lines ? linesToText(item[field.key]) : (item[field.key] ?? '')} onChange={(value) => updateItem(section.key, index, field.key, value, field.lines)} />
-                    ))}
-                  </div>
-                </article>
-              ))}
-            </div>
-            <button className="admin-add-button" type="button" onClick={() => addItem(section.key, section.create)}>＋ {section.addLabel}</button>
+            {section.key === 'techStack' ? (
+              <TechStackEditor
+                items={data.techStack}
+                onChange={(techStack) => setData((current) => ({ ...current, techStack }))}
+              />
+            ) : (
+              <>
+                <div className="admin-item-list">
+                  {data[section.key].map((item, index) => (
+                    <article className="admin-item-card" key={`${section.key}-${index}`}>
+                      <div className="admin-item-topline">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span>ENTRI {String(index + 1).padStart(2, '0')}</span>
+                          {section.key === 'projects' && (
+                            <span className={`admin-type-badge ${item.projectType === 'personal' ? 'is-personal' : 'is-work'}`}>
+                              {item.projectType === 'personal' ? 'PRIBADI' : 'KANTOR'}
+                            </span>
+                          )}
+                        </div>
+                        <button className="admin-remove-button" type="button" onClick={() => removeItem(section.key, index)}>HAPUS ×</button>
+                      </div>
+                      <div className="admin-form-grid">
+                        {section.fields.map((field) => (
+                          section.key === 'projects' && field.key === 'tech' ? (
+                            <ProjectTechEditor
+                              key={field.key}
+                              label={field.label}
+                              items={item.tech || []}
+                              onChange={(tech) => updateItem(section.key, index, 'tech', tech)}
+                            />
+                          ) : (
+                            <EditorField adminKey={key} key={field.key} field={field} value={field.lines ? linesToText(item[field.key]) : (item[field.key] ?? '')} onChange={(value) => updateItem(section.key, index, field.key, value, field.lines)} />
+                          )
+                        ))}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+                <button className="admin-add-button" type="button" onClick={() => addItem(section.key, section.create)}>＋ {section.addLabel}</button>
+              </>
+            )}
           </section>
         ))}
 
@@ -658,6 +671,193 @@ export default function AdminPortal() {
         />
       )}
     </main>
+  )
+}
+
+const suggestedTechCategories = ['Frontend', 'Backend', 'Database', 'DevOps', 'Mobile', 'Cloud', 'Tools', 'Lainnya']
+
+function TechStackEditor({ items, onChange }) {
+  const [newCategory, setNewCategory] = useState(suggestedTechCategories[0])
+  const categories = [...new Set([
+    ...suggestedTechCategories,
+    ...items.map((item) => item.category).filter(Boolean),
+    newCategory,
+  ])]
+  const groups = items.reduce((result, item, index) => {
+    const category = item.category || ''
+    let group = result.find((entry) => entry.category === category)
+    if (!group) {
+      group = { category, entries: [] }
+      result.push(group)
+    }
+    group.entries.push({ item, index })
+    return result
+  }, [])
+
+  function addTechnology(category) {
+    onChange([...items, { name: '', category }])
+  }
+
+  function updateTechnology(index, name) {
+    onChange(items.map((item, itemIndex) => itemIndex === index ? { ...item, name } : item))
+  }
+
+  function removeTechnology(index) {
+    onChange(items.filter((_, itemIndex) => itemIndex !== index))
+  }
+
+  function updateCategory(currentCategory, nextCategory) {
+    onChange(items.map((item) => (item.category || '') === currentCategory
+      ? { ...item, category: nextCategory }
+      : item))
+  }
+
+  function removeCategory(category) {
+    onChange(items.filter((item) => (item.category || '') !== category))
+  }
+
+  return (
+    <div className="admin-tech-editor">
+      <div className="admin-tech-toolbar">
+        <p>Setiap teknologi tampil sebagai label. Pilih kategori, lalu tambah, ubah, atau hapus label satu per satu.</p>
+        <div className="admin-tech-add-control">
+          <label className="admin-tech-category-picker">
+            <span>KATEGORI</span>
+            <select className="admin-select" value={newCategory} onChange={(event) => setNewCategory(event.target.value)}>
+              {categories.map((category) => <option key={category} value={category}>{category}</option>)}
+            </select>
+          </label>
+          <button className="admin-add-button" type="button" onClick={() => addTechnology(newCategory)}>＋ Tambah label</button>
+        </div>
+      </div>
+
+      {groups.length > 0 ? (
+        <div className="admin-tech-groups">
+          {groups.map((group, groupIndex) => (
+            <section className="admin-tech-group-card" key={group.category || 'uncategorized'}>
+              <header className="admin-tech-group-header">
+                <label className="admin-tech-category-picker">
+                  <span>KATEGORI / GRUP {String(groupIndex + 1).padStart(2, '0')}</span>
+                  <select
+                    className="admin-select"
+                    value={group.category}
+                    onChange={(event) => updateCategory(group.category, event.target.value)}
+                    aria-label={`Kategori grup ${groupIndex + 1}`}
+                    required
+                  >
+                    <option value="">Pilih kategori</option>
+                    {categories.map((category) => <option key={category} value={category}>{category}</option>)}
+                  </select>
+                </label>
+                <div className="admin-tech-group-actions">
+                  <span>{group.entries.length} label</span>
+                  <button
+                    type="button"
+                    className="admin-tech-delete-group"
+                    onClick={() => removeCategory(group.category)}
+                    aria-label={`Hapus semua teknologi kategori ${group.category || 'tanpa kategori'}`}
+                    title="Hapus semua label dalam kategori ini"
+                  >
+                    Hapus grup ×
+                  </button>
+                </div>
+              </header>
+              <div className="admin-tech-chip-list">
+                {group.entries.map(({ item, index }) => (
+                  <div className="admin-tech-chip" key={`${group.category}-${index}`}>
+                    <span aria-hidden="true">•</span>
+                    <input
+                      value={item.name}
+                      onChange={(event) => updateTechnology(index, event.target.value)}
+                      placeholder="Nama teknologi"
+                      aria-label={`Nama teknologi ${index + 1}`}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeTechnology(index)}
+                      aria-label={`Hapus teknologi ${item.name || index + 1}`}
+                      title="Hapus teknologi"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                {group.entries.length === 0 && <p className="admin-tech-empty-group">Belum ada label teknologi di grup ini.</p>}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : (
+        <div className="admin-tech-empty">
+          <strong>Belum ada teknologi.</strong>
+          <span>Pilih kategori di atas, lalu tekan “Tambah label” untuk mulai.</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ProjectTechEditor({ label, items = [], onChange }) {
+  const [draft, setDraft] = useState('')
+
+  function addTechnology() {
+    const name = draft.trim()
+    if (!name) return
+    onChange([...items, name])
+    setDraft('')
+  }
+
+  function updateTechnology(index, name) {
+    onChange(items.map((item, itemIndex) => itemIndex === index ? name : item))
+  }
+
+  function removeTechnology(index) {
+    onChange(items.filter((_, itemIndex) => itemIndex !== index))
+  }
+
+  return (
+    <div className="admin-project-tech-field is-wide">
+      <span className="admin-project-tech-label">{label}</span>
+      <p>Tambahkan setiap teknologi sebagai label terpisah; klik × untuk menghapusnya.</p>
+      <div className="admin-project-tech-list">
+        {items.map((item, index) => (
+          <div className="admin-project-tech-chip" key={`${item}-${index}`}>
+            <span aria-hidden="true">{item.trim().slice(0, 2).toUpperCase() || '•'}</span>
+            <input
+              value={item}
+              onChange={(event) => updateTechnology(index, event.target.value)}
+              placeholder="Nama teknologi"
+              aria-label={`Teknologi project ${index + 1}`}
+            />
+            <button
+              type="button"
+              onClick={() => removeTechnology(index)}
+              aria-label={`Hapus teknologi ${item || index + 1}`}
+              title="Hapus teknologi"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        {items.length === 0 && <span className="admin-project-tech-empty">Belum ada teknologi ditambahkan.</span>}
+      </div>
+      <div className="admin-project-tech-add">
+        <input
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault()
+              addTechnology()
+            }
+          }}
+          placeholder="Contoh: React, Go, PostgreSQL"
+          aria-label="Teknologi baru"
+        />
+        <button type="button" onClick={addTechnology} disabled={!draft.trim()}>＋ Tambah teknologi</button>
+      </div>
+    </div>
   )
 }
 
@@ -992,4 +1192,3 @@ function CVImportModal({ result, onClose, onApply }) {
     </div>
   )
 }
-

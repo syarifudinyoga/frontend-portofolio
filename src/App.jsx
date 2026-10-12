@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { ArrowUpRight, Code2, ExternalLink, LockKeyhole } from 'lucide-react'
 import AdminPortal from './AdminPortal.jsx'
 import { apiFetch, resolveMediaUrl } from './crypto.js'
 import { lines, localizePortfolio, resolveTexts } from './uiTexts.js'
@@ -156,7 +157,7 @@ function App() {
           {active === 1 && <EducationPage education={education} certifications={certifications} t={t} lang={lang} />}
           {active === 2 && <SkillsPage groups={groupedSkills} techStack={techStack} t={t} />}
           {active === 3 && <JourneyPage experiences={experiences} t={t} lang={lang} />}
-          {active === 4 && <WorkPage projects={projects} t={t} onSelectProject={(proj, tab) => setPreviewProject({ ...proj, initialTab: tab || 'iframe' })} />}
+          {active === 4 && <WorkPage projects={projects} t={t} onSelectProject={(proj, tab) => setPreviewProject({ ...proj, initialTab: tab || 'media' })} />}
           {active === 5 && <ClosingPage profile={profile} t={t} />}
         </div>
         <footer className="page-footer">
@@ -306,18 +307,30 @@ function JourneyPage({ experiences, t, lang }) {
 
 function ProjectCard({ project, index, t, onSelectProject }) {
   const isPersonal = project.projectType === 'personal'
+  const previewLabel = /iframe/i.test(t.workLiveIframe) ? 'PREVIEW' : t.workLiveIframe
   return (
-    <article className={`project-card project-${index % 2}`} key={project.id || `${project.title}-${index}`}>
-      <div
-        className="project-art"
-        onClick={() => onSelectProject(project, project.liveUrl ? 'iframe' : 'media')}
-        role="button"
-        tabIndex={0}
-        aria-label={`Buka preview ${project.title}`}
-        onKeyDown={(e) => { if (e.key === 'Enter') onSelectProject(project, project.liveUrl ? 'iframe' : 'media') }}
-      >
+    <article
+      className={`project-card project-${index % 2}`}
+      key={project.id || `${project.title}-${index}`}
+      onClick={() => onSelectProject(project, 'media')}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onSelectProject(project, 'media')
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={`Buka detail ${project.title}`}
+    >
+      <div className="project-art">
         {project.videoUrl ? (
           <div className="project-video-wrapper">
+            {project.imageUrl ? (
+              <img className="project-video-poster" src={resolveMediaUrl(project.imageUrl)} alt="" />
+            ) : (
+              <ProjectArtwork project={project} index={index} />
+            )}
             <video
               src={resolveMediaUrl(project.videoUrl)}
               poster={project.imageUrl ? resolveMediaUrl(project.imageUrl) : undefined}
@@ -332,62 +345,80 @@ function ProjectCard({ project, index, t, onSelectProject }) {
         ) : project.imageUrl ? (
           <img src={resolveMediaUrl(project.imageUrl)} alt={`Pratinjau ${project.title}`} loading="lazy" />
         ) : (
-          <div className="project-art-placeholder">
-            <span>{String(index + 1).padStart(2, '0')}</span>
-            <b>{project.title}</b>
-            <i>{lines(t.workStudyInMaking)}</i>
-          </div>
+          <ProjectArtwork project={project} index={index} />
         )}
-        <span className="project-year">{project.year}</span>
-        <div className="project-overlay-hint">
-          <span>{project.liveUrl ? `🌐 ${t.workLiveIframe}` : `🔍 ${t.workTabMedia}`}</span>
-        </div>
+        <span className="project-year"><b>{project.year}</b></span>
       </div>
       <div className="project-info">
-        <div>
-          <div className="project-category-row">
-            <span>{project.category}</span>
-            <span className={`project-type-tag ${isPersonal ? 'is-personal' : 'is-work'}`}>
-              {isPersonal ? (t.workBadgePersonal || '💡 PRIBADI') : (t.workBadgeWork || '🏢 KANTOR')}
-            </span>
-          </div>
-          <h2
-            className="project-title-link"
-            onClick={() => onSelectProject(project, project.liveUrl ? 'iframe' : 'media')}
-          >
-            {project.title}
-          </h2>
+        <div className="project-category-row">
+          <span>{project.category}</span>
+          <span className={`project-type-tag ${isPersonal ? 'is-personal' : 'is-work'}`}>
+            {isPersonal ? (t.workBadgePersonal || 'PRIBADI') : (t.workBadgeWork || 'KANTOR')}
+          </span>
         </div>
-        <div className="project-links">
-          {project.liveUrl && (
-            <button
-              type="button"
-              className="project-action-btn"
-              onClick={() => onSelectProject(project, 'iframe')}
-              title={t.workLiveIframe}
-            >
-              <span>🌐 {t.workLiveIframe}</span>
-            </button>
-          )}
-          {project.liveUrl && (
-            <a href={project.liveUrl} target="_blank" rel="noreferrer" title={t.workOpenTab}>
-              {t.workLive}
-            </a>
-          )}
-          {project.repoUrl && (
-            <a href={project.repoUrl} target="_blank" rel="noreferrer">
-              {t.workRepo}
-            </a>
-          )}
+        <h2 className="project-title-link">
+          {project.title}
+        </h2>
+      </div>
+      <div className="project-overlay-hint" aria-hidden="true">
+        <span>
+          <ArrowUpRight aria-hidden="true" size={15} strokeWidth={1.8} />
+          <b>{previewLabel}</b>
+        </span>
+      </div>
+    </article>
+  )
+}
+
+function technologyMonogram(value = '') {
+  const characters = String(value).match(/[A-Za-z0-9]+/g)?.join('') || ''
+  return characters.slice(0, 2).toUpperCase() || '·'
+}
+
+function projectMonogram(title = '') {
+  const words = String(title).trim().split(/\s+/).filter(Boolean)
+  if (words.length > 1) return words.slice(0, 2).map((word) => word[0]).join('').toUpperCase()
+  return words[0]?.slice(0, 2).toUpperCase() || 'PR'
+}
+
+function TechnologyBadges({ items = [], label }) {
+  const technologies = items.filter((item) => String(item).trim())
+  return (
+    <div className="project-tech-list" aria-label={label}>
+      {technologies.map((item, index) => (
+        <span key={`${item}-${index}`} title={item}>
+          <i aria-hidden="true">{technologyMonogram(item)}</i>
+          <b>{item}</b>
+        </span>
+      ))}
+    </div>
+  )
+}
+
+function ProjectArtwork({ project, index = 0 }) {
+  const title = project.title?.trim() || 'Project tanpa judul'
+  const category = project.category || (project.projectType === 'personal' ? 'PERSONAL PROJECT' : 'PROJECT')
+
+  return (
+    <div
+      className={`project-art-placeholder project-art-palette-${index % 4}`}
+      role="img"
+      aria-label={`Ilustrasi project ${title}`}
+    >
+      <div className="project-art-topline">
+        <span>PORTFOLIO / {String(index + 1).padStart(2, '0')}</span>
+        <span>{project.year || 'CASE STUDY'}</span>
+      </div>
+      <div className="project-art-main">
+        <div className="project-art-emblem" aria-hidden="true">
+          <span>{projectMonogram(title)}</span>
+        </div>
+        <div className="project-art-copy">
+          <span>{category}</span>
+          <b>{title}</b>
         </div>
       </div>
-      <p className="project-description">{project.description}</p>
-      {project.tech?.length > 0 && (
-        <div className="tag-list">
-          {project.tech.map((item) => <span key={item}>{item}</span>)}
-        </div>
-      )}
-    </article>
+    </div>
   )
 }
 
@@ -552,7 +583,7 @@ function WorkPage({ projects, t, onSelectProject }) {
   )
 }
 
-function ProjectPreviewModal({ project, initialTab = 'iframe', onClose, t }) {
+function ProjectPreviewModal({ project, initialTab = 'media', onClose, t }) {
   const hasLiveUrl = Boolean(project.liveUrl && project.liveUrl.trim())
   const [tab, setTab] = useState(hasLiveUrl && initialTab === 'iframe' ? 'iframe' : 'media')
   const [iframeKey, setIframeKey] = useState(0)
@@ -586,26 +617,26 @@ function ProjectPreviewModal({ project, initialTab = 'iframe', onClose, t }) {
           </div>
 
           <div className="browser-tabs">
+            <button
+              type="button"
+              className={`browser-tab ${tab === 'media' ? 'is-active' : ''}`}
+              onClick={() => setTab('media')}
+            >
+              {t.workTabMedia}
+            </button>
             {hasLiveUrl && (
               <button
                 type="button"
                 className={`browser-tab ${tab === 'iframe' ? 'is-active' : ''}`}
                 onClick={() => setTab('iframe')}
               >
-                🌐 {t.workTabIframe}
+                {t.workTabIframe}
               </button>
             )}
-            <button
-              type="button"
-              className={`browser-tab ${tab === 'media' ? 'is-active' : ''}`}
-              onClick={() => setTab('media')}
-            >
-              🎬 {t.workTabMedia}
-            </button>
           </div>
 
           <div className="browser-address-bar">
-            <span className="address-lock">🔒</span>
+            {/* <span className="address-lock">🔒</span> */}
             <span className="address-url">{hasLiveUrl ? project.liveUrl : project.title}</span>
             {hasLiveUrl && (
               <button type="button" className="address-reload" onClick={reloadIframe} title={t.workReload}>
@@ -658,88 +689,84 @@ function ProjectPreviewModal({ project, initialTab = 'iframe', onClose, t }) {
               </div>
             </div>
           ) : (
-            <div className="media-stage">
-              <div className="media-visuals">
-                {project.videoUrl && (
-                  <div className="media-video-container">
-                    <span className="media-section-badge">🎬 {t.workVideoBadge}</span>
-                    <video
-                      src={resolveMediaUrl(project.videoUrl)}
-                      controls
-                      autoPlay
-                      muted
-                      playsInline
-                      className="media-video-player"
-                    />
-                  </div>
-                )}
-                {project.imageUrl && (
-                  <div className="media-image-container">
-                    <img src={resolveMediaUrl(project.imageUrl)} alt={project.title} className="media-image-preview" />
-                  </div>
-                )}
-                {!project.videoUrl && !project.imageUrl && (
-                  <div className="media-empty-placeholder">
-                    <img className="book-mark" src="/logo.svg" alt="" aria-hidden="true" />
-                    <p>{t.workNoMedia}</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="media-details">
-                <div className="media-category-row">
-                  <span className="media-category">{project.category} · {project.year}</span>
-                  <span className={`project-type-pill ${project.projectType === 'personal' ? 'is-personal' : 'is-work'}`}>
-                    {project.projectType === 'personal' ? (t.workBadgePersonal || '💡 PRIBADI') : (t.workBadgeWork || '🏢 KANTOR')}
-                  </span>
+          <div className="media-stage has-visual">
+            <div className="media-visuals">
+              {project.videoUrl ? (
+                <div className="media-video-container">
+                  <span className="media-section-badge">🎬 {t.workVideoBadge}</span>
+                  <video
+                    src={resolveMediaUrl(project.videoUrl)}
+                    controls
+                    autoPlay
+                    muted
+                    playsInline
+                    className="media-video-player"
+                  />
                 </div>
-                <h2 className="media-title">{project.title}</h2>
-                <p className="media-description">{project.description}</p>
-
-                {project.tech?.length > 0 && (
-                  <div className="media-tech-section">
-                    <span className="media-tech-label">{t.workTech}:</span>
-                    <div className="tag-list">
-                      {project.tech.map((item) => (
-                        <b key={item}>{item}</b>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="media-actions">
-                  {project.liveUrl && (
-                    <button
-                      type="button"
-                      className="button button-rust"
-                      onClick={() => setTab('iframe')}
-                    >
-                      🌐 {t.workTabIframe}
-                    </button>
-                  )}
-                  {project.liveUrl && (
-                    <a
-                      href={project.liveUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="button button-outline"
-                    >
-                      {t.workOpenTab}
-                    </a>
-                  )}
-                  {project.repoUrl && (
-                    <a
-                      href={project.repoUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="button button-outline"
-                    >
-                      {t.workRepo}
-                    </a>
-                  )}
+              ) : (
+                <div
+                  className="media-preview-unavailable"
+                  role="img"
+                  aria-label={`Video preview ${project.title} tidak tersedia`}
+                >
+                  <LockKeyhole aria-hidden="true" size={34} strokeWidth={1.5} />
+                  <span>PREVIEW RESTRICTED</span>
                 </div>
-              </div>
+              )}
             </div>
+
+            <div className="media-details">
+              <div className="media-category-row">
+                <div className="media-category-meta">
+                  <span className="media-category">{project.category}</span>
+                </div>
+                <span className="media-year">{project.year}</span>
+              </div>
+              <h2 className="media-title">{project.title}</h2>
+              <p className="media-description">{project.description}</p>
+            </div>
+            {(project.tech?.length > 0 || project.liveUrl || project.repoUrl) && (
+              <div className="media-footer">
+                <div className="media-tech-section">
+                  {project.tech?.length > 0 && (
+                    <>
+                    <span className="media-tech-label">
+                      <Code2 aria-hidden="true" size={13} />
+                      {t.workTech}
+                    </span>
+                    <TechnologyBadges items={project.tech} label={t.workTech} />
+                    </>
+                  )}
+                  {(project.liveUrl || project.repoUrl) && (
+                    <div className="media-actions">
+                      {project.liveUrl && (
+                        <a
+                          href={project.liveUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="button button-outline project-detail-link is-live"
+                        >
+                          <ExternalLink aria-hidden="true" size={13} />
+                          {t.workOpenTab}
+                        </a>
+                      )}
+                      {project.repoUrl && (
+                        <a
+                          href={project.repoUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="button button-outline project-detail-link"
+                        >
+                          <Code2 aria-hidden="true" size={13} />
+                          {t.workRepo}
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
           )}
         </div>
       </div>
