@@ -111,12 +111,16 @@ function App() {
 
   if (error) {
     const tError = resolveTexts({}, lang)
+    const isConnError = error.includes('Backend not connected') || error.includes('Backend tidak terhubung')
+    const eyebrow = isConnError ? tError.errorEyebrow : (lang === 'en' ? 'SERVER ERROR' : 'ERROR SERVER')
+    const heading = isConnError ? tError.errorHeading : (lang === 'en' ? 'Failed to Load Portfolio' : 'Gagal Memuat Portofolio')
+    const desc = isConnError ? tError.errorDesc : (lang === 'en' ? 'The server encountered an error while loading portfolio data. Detail is shown below.' : 'Server backend mengalami kendala saat memuat data portofolio. Detail dapat dilihat di bawah.')
     return (
       <main className="state-screen">
         <div className="state-card">
-          <span className="eyebrow">{tError.errorEyebrow}</span>
-          <h1>{tError.errorHeading}</h1>
-          <p>{tError.errorDesc}</p>
+          <span className="eyebrow">{eyebrow}</span>
+          <h1>{heading}</h1>
+          <p>{desc}</p>
           <button className="button button-dark" onClick={() => window.location.reload()}>{tError.errorReload}</button>
           <small className="error-detail">{error}</small>
         </div>
