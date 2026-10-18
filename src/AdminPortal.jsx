@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { ArrowUpRight } from 'lucide-react'
 import { apiFetch, resolveMediaUrl } from './crypto.js'
 import { defaultTexts, uiTextFields } from './uiTexts.js'
 
@@ -454,7 +455,9 @@ export default function AdminPortal() {
             <input autoComplete="current-password" autoFocus type="password" value={key} onChange={(event) => setKey(event.target.value)} required />
           </label>
           {error && <p className="admin-error" role="alert">{error}</p>}
-          <button className="admin-primary-button" type="submit" disabled={busy}>{busy ? 'MEMERIKSA…' : 'MASUK KE PORTAL ↗'}</button>
+          <button className="admin-primary-button" type="submit" disabled={busy}>
+            {busy ? 'MEMERIKSA…' : <>MASUK KE PORTAL <ArrowUpRight aria-hidden="true" size="1em" /></>}
+          </button>
           <small>Key hanya disimpan sementara di tab browser ini.</small>
         </form>
       </main>
@@ -497,7 +500,7 @@ export default function AdminPortal() {
         <div className="admin-heading">
           <div><span className="admin-kicker">PORTFOLIO / CONTENT MANAGER</span><h1>Atur ceritamu.</h1><p>Semua bagian di bawah disimpan bersama dalam satu transaksi.</p></div>
           <button className={`admin-primary-button save-button ${justSaved ? 'is-saved' : ''}`} type="submit" disabled={busy}>
-            {busy ? 'MENYIMPAN…' : justSaved ? '✓ BERHASIL DISIMPAN!' : 'SIMPAN PERUBAHAN ↗'}
+            {busy ? 'MENYIMPAN…' : justSaved ? '✓ BERHASIL DISIMPAN!' : <>SIMPAN PERUBAHAN <ArrowUpRight aria-hidden="true" size="1em" /></>}
           </button>
         </div>
 
@@ -658,7 +661,7 @@ export default function AdminPortal() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {justSaved && <span className="admin-save-indicator">✓ Data telah tersimpan</span>}
             <button className={`admin-primary-button ${justSaved ? 'is-saved' : ''}`} type="submit" disabled={busy}>
-              {busy ? 'MENYIMPAN…' : justSaved ? '✓ BERHASIL DISIMPAN!' : 'SIMPAN SEMUA PERUBAHAN ↗'}
+              {busy ? 'MENYIMPAN…' : justSaved ? '✓ BERHASIL DISIMPAN!' : <>SIMPAN SEMUA PERUBAHAN <ArrowUpRight aria-hidden="true" size="1em" /></>}
             </button>
           </div>
         </div>

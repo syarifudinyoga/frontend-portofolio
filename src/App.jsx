@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowUpRight, Code2, ExternalLink, LockKeyhole } from 'lucide-react'
+import { ArrowDown, ArrowUpRight, Code2, LockKeyhole, Signature, Sparkles } from 'lucide-react'
 import AdminPortal from './AdminPortal.jsx'
 import { apiFetch, resolveMediaUrl } from './crypto.js'
 import { lines, localizePortfolio, resolveTexts } from './uiTexts.js'
@@ -208,7 +208,7 @@ function App() {
               EN
             </button>
           </div>
-          <a className="contact-link" href={`mailto:${profile.email}`}>{t.contactLabel} <span aria-hidden="true">↗</span></a>
+          <a className="contact-link" href={`mailto:${profile.email}`}>{t.contactLabel} <ArrowUpRight aria-hidden="true" size="1em" /></a>
         </div>
       </header>
 
@@ -222,16 +222,16 @@ function App() {
         >
           <div className="cover-caption"><span>{t.coverCaption1}</span><span>{t.coverCaption2}</span></div>
           <div className="book-3d">
-            <div className="book-pages" aria-hidden="true"><span className="pages-mark">✳</span><span className="pages-note">{lines(t.coverInner)}</span><span className="pages-number">01</span></div>
+            <div className="book-pages" aria-hidden="true"><span className="pages-mark"><Sparkles aria-hidden="true" size="1em" /></span><span className="pages-note">{lines(t.coverInner)}</span><span className="pages-number">01</span></div>
             <div className="cover-flip">
               <button className="book-cover" onClick={openBook} aria-label={t.openBookAria}>
                 <span className="cover-spine" />
                 <span className="cover-topline">{t.coverTopline} <span>{t.coverYear}</span></span>
-                <span className="cover-star">✳</span>
+                <span className="cover-star"><Signature aria-hidden="true" size="1em" /></span>
                 <span className="cover-title">{t.coverTitle1}<br /><i>{t.coverTitle2}</i><br />{t.coverTitle3}</span>
                 <span className="cover-bottom">
                   <span><b>{profile.name}</b><small>{profile.role}</small></span>
-                  <span className="cover-open">{t.coverOpen} <b>↗</b></span>
+                  <span className="cover-open">{t.coverOpen} <b><ArrowUpRight aria-hidden="true" size="1em" /></b></span>
                 </span>
               </button>
               <div className="cover-back" aria-hidden="true"><span>{t.exLibris}<br />— {profile.name} —</span></div>
@@ -239,7 +239,7 @@ function App() {
           </div>
           {opening && <div className="peek-layout" aria-hidden="true" inert="">{readingLayout}</div>}
           <div className="cover-aside"><span className="vertical-label">{t.coverAside}</span><span className="aside-line" /></div>
-          <div className="cover-footer"><span>{profile.location}</span><span className="scroll-hint">{t.coverScrollHint} <b>↓</b></span><span>01 — 06 <span className="footer-spark">✳</span></span></div>
+          <div className="cover-footer"><span>{profile.location}</span><span className="scroll-hint">{t.coverScrollHint} <ArrowDown aria-hidden="true" size={15} /></span><span>01 — 06 <span className="footer-spark"><Sparkles aria-hidden="true" size="1em" /></span></span></div>
         </section>
       ) : (
         readingLayout
@@ -271,7 +271,7 @@ function AboutPage({ profile, onNext, t }) {
           <p className="chapter-intro">{greeting}<span>{profile.name.split(' ')[0]}.</span></p>
           <h1>{t.aboutHeadline || profile.headline}</h1>
           <p className="body-copy">{profile.about}</p>
-          <button className="text-button" onClick={onNext}>{t.aboutNextBtn} <span>↗</span></button>
+          <button className="text-button" onClick={onNext}>{t.aboutNextBtn} <span><ArrowUpRight aria-hidden="true" size="1em" /></span></button>
         </div>
         <div className="portrait-card">
           {profile.avatarUrl ? <img src={resolveMediaUrl(profile.avatarUrl)} alt={`Potret ${profile.name}`} /> : <div className="portrait-placeholder"><span>{profile.name.split(' ').map((word) => word[0]).slice(0, 2).join('')}</span><i>{lines(t.aboutChangePhoto)}</i></div>}
@@ -282,9 +282,9 @@ function AboutPage({ profile, onNext, t }) {
       <div className="about-meta">
         <div><span>{t.aboutBasedIn}</span><b>{profile.location}</b></div>
         <div><span>{t.aboutFocus}</span><b>{profile.role}</b></div>
-        <div><span>{t.aboutEmail}</span><a href={`mailto:${profile.email}`}>{profile.email} ↗</a></div>
-        {profile.website && <div><span>{t.aboutWebsite}</span><a href={profile.website} target="_blank" rel="noreferrer">{t.aboutVisit}</a></div>}
-        {profile.resumeUrl && <div><span>{t.aboutResume}</span><a href={profile.resumeUrl} target="_blank" rel="noreferrer">{t.aboutViewResume}</a></div>}
+        <div><span>{t.aboutEmail}</span><a href={`mailto:${profile.email}`}>{profile.email} <ArrowUpRight aria-hidden="true" size="1em" /></a></div>
+        {profile.website && <div><span>{t.aboutWebsite}</span><a href={profile.website} target="_blank" rel="noreferrer">{t.aboutVisit} <ArrowUpRight aria-hidden="true" size="1em" /></a></div>}
+        {profile.resumeUrl && <div><span>{t.aboutResume}</span><a href={profile.resumeUrl} target="_blank" rel="noreferrer">{t.aboutViewResume} <ArrowUpRight aria-hidden="true" size="1em" /></a></div>}
       </div>
       <div className="margin-note">{lines(t.aboutNotes)}</div>
     </article>
@@ -661,7 +661,7 @@ function ProjectPreviewModal({ project, initialTab = 'media', onClose, t }) {
                 rel="noreferrer"
                 title={t.workOpenTab}
               >
-                {t.workOpenTab}
+                {t.workOpenTab} <ArrowUpRight aria-hidden="true" size="1em" />
               </a>
             )}
             <button type="button" className="browser-btn-close" onClick={onClose} aria-label={t.workClose}>
@@ -691,7 +691,7 @@ function ProjectPreviewModal({ project, initialTab = 'media', onClose, t }) {
               <div className="iframe-notice">
                 <span>ℹ️ {t.workIframeNotice}</span>
                 <a href={project.liveUrl} target="_blank" rel="noreferrer">
-                  {t.workOpenTab}
+                  {t.workOpenTab} <ArrowUpRight aria-hidden="true" size="1em" />
                 </a>
               </div>
             </div>
@@ -753,7 +753,7 @@ function ProjectPreviewModal({ project, initialTab = 'media', onClose, t }) {
                           rel="noreferrer"
                           className="button button-outline project-detail-link is-live"
                         >
-                          <ExternalLink aria-hidden="true" size={13} />
+                          <ArrowUpRight aria-hidden="true" size={13} />
                           {t.workOpenTab}
                         </a>
                       )}
@@ -765,7 +765,7 @@ function ProjectPreviewModal({ project, initialTab = 'media', onClose, t }) {
                           className="button button-outline project-detail-link"
                         >
                           <Code2 aria-hidden="true" size={13} />
-                          {t.workRepo}
+                          {t.workRepo} <ArrowUpRight aria-hidden="true" size={13} />
                         </a>
                       )}
                     </div>
@@ -797,7 +797,7 @@ function SkillsPage({ groups, techStack, t }) {
         </section>)}</div>
         <aside className="tech-card"><span className="group-label">{t.skillsToolkit}</span><h2>{t.skillsToolkitTitle1}<br /><i>{t.skillsToolkitTitle2}</i></h2>
           {Object.entries(technologies).map(([category, items]) => <div className="tech-group" key={category}><span>{category}</span><div className="tag-list">{items.map((item) => <b key={item}>{item}</b>)}</div></div>)}
-          <span className="tech-spark">✳</span>
+          <span className="tech-spark"><Sparkles aria-hidden="true" size="1em" /></span>
         </aside>
       </div>
     </article>
@@ -813,7 +813,7 @@ function EducationPage({ education, certifications, t, lang }) {
         <article className="education-card" key={item.id}>
           <span className="education-year">{formatDate(item.startDate, lang)} — {item.endDate ? formatDate(item.endDate, lang) : t.educationPresent}</span>
           <div><h2>{item.institution}</h2><p>{item.degree}{item.field ? ` · ${item.field}` : ''}</p>{item.description && <small>{item.description}</small>}</div>
-          <span className="education-mark">✳</span>
+          <span className="education-mark"><Sparkles aria-hidden="true" size="1em" /></span>
         </article>
       ))}</div>
       {certifications.length > 0 && (
@@ -823,7 +823,7 @@ function EducationPage({ education, certifications, t, lang }) {
             <article className="education-card" key={item.id}>
               <span className="education-year">{item.issuedDate ? formatDate(item.issuedDate, lang) : '—'}</span>
               <div><h2>{item.name}</h2>{item.issuer && <p>{item.issuer}</p>}</div>
-              {item.credentialUrl ? <a className="education-mark cert-link" href={item.credentialUrl} target="_blank" rel="noreferrer" aria-label={t.certAria(item.name)}>↗</a> : <span className="education-mark">✳</span>}
+              {item.credentialUrl ? <a className="education-mark cert-link" href={item.credentialUrl} target="_blank" rel="noreferrer" aria-label={t.certAria(item.name)}><ArrowUpRight aria-hidden="true" size="1em" /></a> : <span className="education-mark"><Sparkles aria-hidden="true" size="1em" /></span>}
             </article>
           ))}</div>
         </>
@@ -847,7 +847,7 @@ function ClosingPage({ profile, t }) {
       <h1 className="closing-title">{t.closingTitle1}<br /><i>{t.closingTitle2}</i></h1>
       <div className="social-list">{links.map((item) => (
         <a key={item.label} href={item.href} {...(item.label === 'Email' ? {} : { target: '_blank', rel: 'noreferrer' })}>
-          <span>{item.label.toUpperCase()}</span><b>{item.text || handleFromUrl(item.href)}</b><i aria-hidden="true">↗</i>
+          <span>{item.label.toUpperCase()}</span><b>{item.text || handleFromUrl(item.href)}</b><i aria-hidden="true"><ArrowUpRight size="1em" /></i>
         </a>
       ))}</div>
       <div className="margin-note">{t.closingFarewell}</div>

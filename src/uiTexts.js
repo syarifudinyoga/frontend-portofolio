@@ -41,8 +41,8 @@ export const uiTextFields = [
   { key: 'aboutEmail', label: 'Tentang: Label email', value: 'EMAIL', group: 'Halaman Tentang' },
   { key: 'aboutWebsite', label: 'Tentang: Label website', value: 'WEBSITE', group: 'Halaman Tentang' },
   { key: 'aboutResume', label: 'Tentang: Label resume', value: 'RESUME', group: 'Halaman Tentang' },
-  { key: 'aboutVisit', label: 'Tentang: Teks link website', value: 'Kunjungi ↗', group: 'Halaman Tentang' },
-  { key: 'aboutViewResume', label: 'Tentang: Teks link resume', value: 'Lihat resume ↗', group: 'Halaman Tentang' },
+  { key: 'aboutVisit', label: 'Tentang: Teks link website', value: 'Kunjungi', group: 'Halaman Tentang' },
+  { key: 'aboutViewResume', label: 'Tentang: Teks link resume', value: 'Lihat resume', group: 'Halaman Tentang' },
   { key: 'aboutChangePhoto', label: 'Tentang: Petunjuk placeholder foto (pakai baris baru)', value: 'Ganti foto\nprofil Anda', group: 'Halaman Tentang' },
 
   // Halaman Pendidikan
@@ -73,10 +73,10 @@ export const uiTextFields = [
   { key: 'workIntro', label: 'Karya: Sub-judul pembuka', value: 'Sedikit dari', group: 'Halaman Karya pilihan' },
   { key: 'workHeading', label: 'Karya: Judul utama', value: 'yang sudah dibuat.', group: 'Halaman Karya pilihan' },
   { key: 'workStudyInMaking', label: 'Karya: Keterangan kartu (pakai baris baru)', value: 'STUDY IN\nMAKING', group: 'Halaman Karya pilihan' },
-  { key: 'workLive', label: 'Karya: Tombol link live demo', value: 'LIVE ↗', group: 'Halaman Karya pilihan' },
-  { key: 'workRepo', label: 'Karya: Tombol link repo GitHub', value: 'REPO ↗', group: 'Halaman Karya pilihan' },
+  { key: 'workLive', label: 'Karya: Tombol link live demo', value: 'LIVE', group: 'Halaman Karya pilihan' },
+  { key: 'workRepo', label: 'Karya: Tombol link repo GitHub', value: 'REPO', group: 'Halaman Karya pilihan' },
   { key: 'workLiveIframe', label: 'Karya: Tombol Preview', value: 'PREVIEW', group: 'Halaman Karya pilihan' },
-  { key: 'workOpenTab', label: 'Karya: Tombol buka di tab baru', value: 'Buka di Tab Baru ↗', group: 'Halaman Karya pilihan' },
+  { key: 'workOpenTab', label: 'Karya: Tombol buka di tab baru', value: 'Buka di Tab Baru', group: 'Halaman Karya pilihan' },
   { key: 'workClose', label: 'Karya: Tombol tutup modal', value: 'Tutup', group: 'Halaman Karya pilihan' },
   { key: 'workReload', label: 'Karya: Tombol reload iframe', value: 'Muat Ulang', group: 'Halaman Karya pilihan' },
   { key: 'workTabIframe', label: 'Karya: Tab web live (iFrame)', value: 'Live Demo (iFrame)', group: 'Halaman Karya pilihan' },
@@ -148,8 +148,8 @@ export const defaultTextsEN = {
   aboutEmail: 'EMAIL',
   aboutWebsite: 'WEBSITE',
   aboutResume: 'RESUME',
-  aboutVisit: 'Visit ↗',
-  aboutViewResume: 'View resume ↗',
+  aboutVisit: 'Visit',
+  aboutViewResume: 'View resume',
   aboutChangePhoto: 'Change profile\nphoto',
   educationKicker: '02 / ROOTS & DIRECTION',
   educationIntro: 'Lifelong learning,',
@@ -172,10 +172,10 @@ export const defaultTextsEN = {
   workIntro: 'A glimpse of',
   workHeading: 'what has been crafted.',
   workStudyInMaking: 'STUDY IN\nMAKING',
-  workLive: 'LIVE ↗',
-  workRepo: 'REPO ↗',
+  workLive: 'LIVE',
+  workRepo: 'REPO',
   workLiveIframe: 'PREVIEW',
-  workOpenTab: 'Open in New Tab ↗',
+  workOpenTab: 'Open in New Tab',
   workClose: 'Close',
   workReload: 'Reload',
   workTabIframe: 'Live Web (iFrame)',
@@ -255,8 +255,8 @@ export const customTextTranslations = {
   'EMAIL': 'EMAIL',
   'WEBSITE': 'WEBSITE',
   'RESUME': 'RESUME',
-  'Kunjungi ↗': 'Visit ↗',
-  'Lihat resume ↗': 'View resume ↗',
+  Kunjungi: 'Visit',
+  'Lihat resume': 'View resume',
   'Ganti foto\nprofil Anda': 'Change profile\nphoto',
   '02 / AKAR & ARAH': '02 / ROOTS & DIRECTION',
   'Terus belajar,': 'Lifelong learning,',
@@ -278,10 +278,10 @@ export const customTextTranslations = {
   'Sedikit dari': 'A glimpse of',
   'yang sudah dibuat.': 'what has been crafted.',
   'STUDY IN\nMAKING': 'STUDY IN\nMAKING',
-  'LIVE ↗': 'LIVE ↗',
-  'REPO ↗': 'REPO ↗',
+  LIVE: 'LIVE',
+  REPO: 'REPO',
   'PREVIEW IFRAME': 'LIVE IFRAME',
-  'Buka di Tab Baru ↗': 'Open in New Tab ↗',
+  'Buka di Tab Baru': 'Open in New Tab',
   'Tutup': 'Close',
   'Muat Ulang': 'Reload',
   'Live Demo (iFrame)': 'Live Web (iFrame)',
@@ -325,8 +325,8 @@ export const uiStrings = {
     aboutEmail: 'EMAIL',
     aboutWebsite: 'WEBSITE',
     aboutResume: 'RESUME',
-    aboutVisit: 'Kunjungi ↗',
-    aboutViewResume: 'Lihat resume ↗',
+    aboutVisit: 'Kunjungi',
+    aboutViewResume: 'Lihat resume',
     aboutNotes: 'CATATAN\n01 — 06',
     aboutFig: 'FIG. 01 — A WORK IN PROGRESS',
     aboutOpenToIdeas: 'OPEN\nTO IDEAS',
@@ -341,10 +341,10 @@ export const uiStrings = {
     workHeading: 'yang sudah dibuat.',
     workEmpty: 'Karya pilihan akan segera ditambahkan.',
     workStudyInMaking: 'STUDY IN\nMAKING',
-    workLive: 'LIVE ↗',
-    workRepo: 'REPO ↗',
+    workLive: 'LIVE',
+    workRepo: 'REPO',
     workLiveIframe: 'PREVIEW',
-    workOpenTab: 'Buka di Tab Baru ↗',
+    workOpenTab: 'Buka di Tab Baru',
     workClose: 'Tutup',
     workReload: 'Muat Ulang',
     workIframeNotice: 'Catatan: Beberapa web membatasi preview iframe karena aturan keamanan. Jika kosong, klik tombol Buka di Tab Baru.',
@@ -402,8 +402,8 @@ export const uiStrings = {
     aboutEmail: 'EMAIL',
     aboutWebsite: 'WEBSITE',
     aboutResume: 'RESUME',
-    aboutVisit: 'Visit ↗',
-    aboutViewResume: 'View resume ↗',
+    aboutVisit: 'Visit',
+    aboutViewResume: 'View resume',
     aboutNotes: 'NOTES\n01 — 06',
     aboutFig: 'FIG. 01 — A WORK IN PROGRESS',
     aboutOpenToIdeas: 'OPEN\nTO IDEAS',
@@ -418,10 +418,10 @@ export const uiStrings = {
     workHeading: 'what has been crafted.',
     workEmpty: 'Selected projects will be added soon.',
     workStudyInMaking: 'STUDY IN\nMAKING',
-    workLive: 'LIVE ↗',
-    workRepo: 'REPO ↗',
+    workLive: 'LIVE',
+    workRepo: 'REPO',
     workLiveIframe: 'PREVIEW',
-    workOpenTab: 'Open in New Tab ↗',
+    workOpenTab: 'Open in New Tab',
     workClose: 'Close',
     workReload: 'Reload',
     workIframeNotice: 'Note: Some external websites restrict iframe embedding. If blank, please click Open in New Tab.',
@@ -667,13 +667,14 @@ export function resolveTexts(saved, lang = 'id') {
   if (currentLang === 'id') {
     for (const [key, value] of Object.entries(saved || {})) {
       if (typeof value === 'string' && value.trim()) {
-        result[key] = value
+        result[key] = value.replace(/\s*\u2197\s*$/, '')
       }
     }
   } else {
     for (const [key, value] of Object.entries(saved || {})) {
       if (typeof value === 'string' && value.trim()) {
-        const trimmed = value.trim()
+        const normalizedValue = value.replace(/\s*\u2197\s*$/, '')
+        const trimmed = normalizedValue.trim()
         const isDefaultID = defaultTextsID[key] && trimmed === defaultTextsID[key].trim()
         const translated = translateContent(trimmed, 'en')
 
@@ -684,7 +685,7 @@ export function resolveTexts(saved, lang = 'id') {
         } else if (defaultTextsEN[key] && !trimmed) {
           result[key] = defaultTextsEN[key]
         } else {
-          result[key] = translated || value
+          result[key] = translated || normalizedValue
         }
       }
     }

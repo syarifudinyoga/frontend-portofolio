@@ -58,7 +58,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--rust); outline-
 .cover-stage.is-opening .cover-caption, .cover-stage.is-opening .cover-aside, .cover-stage.is-opening .cover-footer { opacity: 0; transform: translateY(10px); transition: opacity .3s ease, transform .3s ease; }
 .cover-footer { transition: opacity .3s ease, transform .3s ease; }
 .scroll-hint { display: inline-flex; align-items: center; gap: 7px; color: var(--rust); }
-.scroll-hint b { font: 15px var(--serif); animation: scroll-cue 1.25s ease-in-out infinite; }
+.scroll-hint svg { animation: scroll-cue 1.25s ease-in-out infinite; }
 .cover-spine { position: absolute; top: 0; bottom: 0; left: 25px; width: 1px; background: #f5d7b346; }
 .cover-topline { display: flex; justify-content: space-between; color: #f1d1b3; font-size: 8px; }
 .cover-star { position: absolute; right: 39px; top: 93px; font-size: 35px; color: #e2b88b; }
