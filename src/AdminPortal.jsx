@@ -1,5 +1,16 @@
 import { useEffect, useState } from 'react'
-import { ArrowUpRight } from 'lucide-react'
+import {
+  ArrowUpRight,
+  Award,
+  BriefcaseBusiness,
+  ChevronDown,
+  FolderKanban,
+  GraduationCap,
+  Layers3,
+  Lightbulb,
+  Type,
+  UserRound,
+} from 'lucide-react'
 import { apiFetch, resolveMediaUrl } from './crypto.js'
 import { defaultTexts, uiTextFields } from './uiTexts.js'
 
@@ -173,6 +184,8 @@ function normalizePortfolio(value) {
 export default function AdminPortal() {
   const [key, setKey] = useState(() => sessionStorage.getItem('portfolio-admin-key') || '')
   const [authenticated, setAuthenticated] = useState(false)
+  const [activeAdminSection, setActiveAdminSection] = useState('admin-profile')
+  const [collapsedItems, setCollapsedItems] = useState({})
   const [data, setData] = useState(emptyPortfolio)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
@@ -189,6 +202,36 @@ export default function AdminPortal() {
   const [showImportModal, setShowImportModal] = useState(false)
 
   const textGroups = [...new Set(uiTextFields.map((field) => field.group))]
+  const adminNavItems = [
+    { id: 'admin-profile', label: 'Profil', icon: UserRound },
+    { id: 'admin-texts', label: 'Teks tampilan', icon: Type, count: textGroups.length },
+    ...listSections.map((section) => ({
+      id: `admin-${section.key}`,
+      label: section.title,
+      icon: {
+        experiences: BriefcaseBusiness,
+        education: GraduationCap,
+        certifications: Award,
+        skills: Lightbulb,
+        techStack: Layers3,
+        projects: FolderKanban,
+      }[section.key],
+      count: data[section.key].length,
+    })),
+  ]
+
+  useEffect(() => {
+    if (!authenticated) return undefined
+    const sections = document.querySelectorAll('[data-admin-section]')
+    const observer = new IntersectionObserver((entries) => {
+      const visibleSections = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
+      if (visibleSections[0]) setActiveAdminSection(visibleSections[0].target.id)
+    }, { rootMargin: '-18% 0px -68% 0px', threshold: 0 })
+    sections.forEach((section) => observer.observe(section))
+    return () => observer.disconnect()
+  }, [authenticated])
 
   function toggleGroup(group) {
     setOpenGroups((prev) => ({
@@ -273,6 +316,14 @@ export default function AdminPortal() {
 
   function removeItem(section, index) {
     setData((current) => ({ ...current, [section]: current[section].filter((_, itemIndex) => itemIndex !== index) }))
+    setCollapsedItems((current) => Object.fromEntries(
+      Object.entries(current).filter(([itemKey]) => !itemKey.startsWith(`${section}:`)),
+    ))
+  }
+
+  function toggleItem(section, index) {
+    const itemKey = `${section}:${index}`
+    setCollapsedItems((current) => ({ ...current, [itemKey]: !current[itemKey] }))
   }
 
   async function savePortfolio(event) {
@@ -497,6 +548,38 @@ export default function AdminPortal() {
         <button className="admin-signout" type="button" onClick={signOut}>KELUAR</button>
       </header>
       <form className="admin-content" onSubmit={savePortfolio}>
+        <div className="admin-editor-layout">
+          <aside className="admin-sidebar">
+            <div className="admin-sidebar-intro">
+              <span className="admin-sidebar-eyebrow">RUANG EDITOR</span>
+              <p>Atur isi portfolio</p>
+            </div>
+            <nav className="admin-sidebar-nav" aria-label="Navigasi editor portfolio">
+              {adminNavItems.map(({ id, label, icon: Icon, count }) => (
+                <a
+                  key={id}
+                  href={`#${id}`}
+                  className={`admin-sidebar-link ${activeAdminSection === id ? 'is-active' : ''}`}
+                  aria-current={activeAdminSection === id ? 'location' : undefined}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    setActiveAdminSection(id)
+                  }}
+                >
+                  <Icon aria-hidden="true" size={16} strokeWidth={1.7} />
+                  <span>{label}</span>
+                  {count !== undefined && <small>{String(count).padStart(2, '0')}</small>}
+                </a>
+              ))}
+            </nav>
+            <div className="admin-sidebar-note">
+              <span className="status-dot" />
+              <span>Semua perubahan disimpan bersama</span>
+            </div>
+          </aside>
+
+          <div className="admin-editor-main">
         <div className="admin-heading">
           <div><span className="admin-kicker">PORTFOLIO / CONTENT MANAGER</span><h1>Atur ceritamu.</h1><p>Semua bagian di bawah disimpan bersama dalam satu transaksi.</p></div>
           <button className={`admin-primary-button save-button ${justSaved ? 'is-saved' : ''}`} type="submit" disabled={busy}>
@@ -504,6 +587,7 @@ export default function AdminPortal() {
           </button>
         </div>
 
+        {/* Fitur impor CV disembunyikan sementara sampai alurnya siap.
         <div className="admin-auto-fill-card">
           <div className="auto-fill-info">
             <span className="auto-fill-spark">⚡</span>
@@ -530,10 +614,11 @@ export default function AdminPortal() {
             </label>
           </div>
         </div>
+        */}
         {message && <div className="admin-success" role="status">{message}</div>}
         {error && <div className="admin-error admin-notice" role="alert">{error}</div>}
 
-        <section className="admin-section">
+        <section className="admin-section" id="admin-profile" data-admin-section>
           <div className="admin-section-heading"><span>01</span><div><h2>Profil</h2><p>Informasi utama yang tampil di sampul dan halaman tentang.</p></div></div>
           <div className="admin-form-grid">
             {profileFields.map((field) => (
@@ -542,7 +627,7 @@ export default function AdminPortal() {
           </div>
         </section>
 
-        <section className="admin-section">
+        <section className="admin-section" id="admin-texts" data-admin-section>
           <div className="admin-section-heading">
             <span>02</span>
             <div className="admin-section-title-wrap">
@@ -610,7 +695,7 @@ export default function AdminPortal() {
         </section>
 
         {listSections.map((section, sectionIndex) => (
-          <section className="admin-section" key={section.key}>
+          <section className="admin-section" id={`admin-${section.key}`} data-admin-section key={section.key}>
             <div className="admin-section-heading"><span>{String(sectionIndex + 3).padStart(2, '0')}</span><div><h2>{section.title}</h2><p>Tambah, ubah, atau hapus entri yang ditampilkan di portfolio.</p></div></div>
             {section.key === 'techStack' ? (
               <TechStackEditor
@@ -621,19 +706,31 @@ export default function AdminPortal() {
               <>
                 <div className="admin-item-list">
                   {data[section.key].map((item, index) => (
-                    <article className="admin-item-card" key={`${section.key}-${index}`}>
+                    <article className={`admin-item-card ${collapsedItems[`${section.key}:${index}`] ? 'is-collapsed' : ''}`} key={`${section.key}-${index}`}>
                       <div className="admin-item-topline">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <button
+                          className="admin-item-toggle"
+                          type="button"
+                          aria-expanded={!collapsedItems[`${section.key}:${index}`]}
+                          aria-controls={`admin-item-${section.key}-${index}`}
+                          onClick={() => toggleItem(section.key, index)}
+                        >
+                          <ChevronDown aria-hidden="true" size={16} />
                           <span>ENTRI {String(index + 1).padStart(2, '0')}</span>
+                          <strong>{item.title || item.company || item.institution || item.name || item.category || section.title}</strong>
                           {section.key === 'projects' && (
                             <span className={`admin-type-badge ${item.projectType === 'personal' ? 'is-personal' : 'is-work'}`}>
                               {item.projectType === 'personal' ? 'PRIBADI' : 'KANTOR'}
                             </span>
                           )}
-                        </div>
+                        </button>
                         <button className="admin-remove-button" type="button" onClick={() => removeItem(section.key, index)}>HAPUS ×</button>
                       </div>
-                      <div className="admin-form-grid">
+                      <div
+                        className="admin-form-grid"
+                        id={`admin-item-${section.key}-${index}`}
+                        hidden={Boolean(collapsedItems[`${section.key}:${index}`])}
+                      >
                         {section.fields.map((field) => (
                           section.key === 'projects' && field.key === 'tech' ? (
                             <ProjectTechEditor
@@ -665,6 +762,8 @@ export default function AdminPortal() {
             </button>
           </div>
         </div>
+          </div>
+        </div>
       </form>
       {showImportModal && cvParseResult && (
         <CVImportModal
@@ -681,6 +780,7 @@ const suggestedTechCategories = ['Frontend', 'Backend', 'Database', 'DevOps', 'M
 
 function TechStackEditor({ items, onChange }) {
   const [newCategory, setNewCategory] = useState(suggestedTechCategories[0])
+  const [collapsedCategories, setCollapsedCategories] = useState({})
   const categories = [...new Set([
     ...suggestedTechCategories,
     ...items.map((item) => item.category).filter(Boolean),
@@ -756,6 +856,19 @@ function TechStackEditor({ items, onChange }) {
                   <span>{group.entries.length} label</span>
                   <button
                     type="button"
+                    className="admin-tech-toggle"
+                    aria-expanded={!collapsedCategories[group.category]}
+                    aria-controls={`admin-tech-group-${groupIndex}`}
+                    onClick={() => setCollapsedCategories((current) => ({
+                      ...current,
+                      [group.category]: !current[group.category],
+                    }))}
+                  >
+                    <ChevronDown aria-hidden="true" size={15} />
+                    {collapsedCategories[group.category] ? 'Buka' : 'Tutup'}
+                  </button>
+                  <button
+                    type="button"
                     className="admin-tech-delete-group"
                     onClick={() => removeCategory(group.category)}
                     aria-label={`Hapus semua teknologi kategori ${group.category || 'tanpa kategori'}`}
@@ -765,7 +878,11 @@ function TechStackEditor({ items, onChange }) {
                   </button>
                 </div>
               </header>
-              <div className="admin-tech-chip-list">
+              <div
+                className="admin-tech-chip-list"
+                id={`admin-tech-group-${groupIndex}`}
+                hidden={Boolean(collapsedCategories[group.category])}
+              >
                 {group.entries.map(({ item, index }) => (
                   <div className="admin-tech-chip" key={`${group.category}-${index}`}>
                     <span aria-hidden="true">•</span>

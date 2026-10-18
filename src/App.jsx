@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowDown, ArrowUpRight, Code2, LockKeyhole, Signature, Sparkles } from 'lucide-react'
+import { ArrowDown, ArrowDownRight, ArrowUpRight, Code2, LockKeyhole, Signature, Sparkles } from 'lucide-react'
 import AdminPortal from './AdminPortal.jsx'
 import { apiFetch, resolveMediaUrl } from './crypto.js'
 import { lines, localizePortfolio, resolveTexts } from './uiTexts.js'
@@ -464,7 +464,7 @@ function WorkPage({ projects, t, onSelectProject }) {
           <p className="chapter-intro">{t.workIntro}</p>
           <h1>{t.workHeading}</h1>
         </div>
-        <span className="page-doodle">↘</span>
+        <ArrowDownRight className="page-doodle" aria-hidden="true" />
       </div>
 
       <div className="project-filters" role="tablist" aria-label="Filter kategori project">
@@ -480,44 +480,25 @@ function WorkPage({ projects, t, onSelectProject }) {
         <button
           type="button"
           role="tab"
-          aria-selected={filter === 'work'}
-          className={`project-filter-btn ${filter === 'work' ? 'is-active' : ''}`}
-          onClick={() => setFilter('work')}
-        >
-          {t.workFilterWork} <span className="filter-count">{workProjects.length}</span>
-        </button>
-        <button
-          type="button"
-          role="tab"
           aria-selected={filter === 'personal'}
           className={`project-filter-btn ${filter === 'personal' ? 'is-active' : ''}`}
           onClick={() => setFilter('personal')}
         >
           {t.workFilterPersonal} <span className="filter-count">{personalProjects.length}</span>
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={filter === 'work'}
+          className={`project-filter-btn ${filter === 'work' ? 'is-active' : ''}`}
+          onClick={() => setFilter('work')}
+        >
+          {t.workFilterWork} <span className="filter-count">{workProjects.length}</span>
+        </button>
       </div>
 
       {filter === 'all' && (
         <div className="project-groups">
-          <section className="project-group-section">
-            <header className="project-group-header">
-              <span className="project-group-kicker">{t.workGroupWork}</span>
-              <p className="project-group-desc">{t.workGroupWorkDesc}</p>
-            </header>
-            <div className="project-grid">
-              {workProjects.map((project, index) => (
-                <ProjectCard
-                  key={project.id || `${project.title}-${index}`}
-                  project={project}
-                  index={index}
-                  t={t}
-                  onSelectProject={onSelectProject}
-                />
-              ))}
-              {workProjects.length === 0 && <p className="empty-note">{t.workEmpty}</p>}
-            </div>
-          </section>
-
           <section className="project-group-section">
             <header className="project-group-header">
               <span className="project-group-kicker">{t.workGroupPersonal}</span>
@@ -538,6 +519,25 @@ function WorkPage({ projects, t, onSelectProject }) {
             ) : (
               <EmptyPersonalCard t={t} />
             )}
+          </section>
+
+          <section className="project-group-section">
+            <header className="project-group-header">
+              <span className="project-group-kicker">{t.workGroupWork}</span>
+              <p className="project-group-desc">{t.workGroupWorkDesc}</p>
+            </header>
+            <div className="project-grid">
+              {workProjects.map((project, index) => (
+                <ProjectCard
+                  key={project.id || `${project.title}-${index}`}
+                  project={project}
+                  index={index}
+                  t={t}
+                  onSelectProject={onSelectProject}
+                />
+              ))}
+              {workProjects.length === 0 && <p className="empty-note">{t.workEmpty}</p>}
+            </div>
           </section>
         </div>
       )}
