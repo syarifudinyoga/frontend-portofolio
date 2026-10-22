@@ -288,21 +288,25 @@ REMOTE
             SSH_OPTS="-i ${SSH_KEY} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR"
 
             echo "=== Polling Frontend Health Check Endpoint ==="
-            ssh ${SSH_OPTS} ${SSH_USER}@${SERVER_HOST} "bash -s" <<REMOTE
+            ssh ${SSH_OPTS} ${SSH_USER}@${SERVER_HOST} "bash -s -- \"${PORT_FE}\" \"${HEALTHCHECK_PATH}\" \"${FRONTEND_CONTAINER}\"" <<'REMOTE'
 set -eu
-URL="http://127.0.0.1:${PORT_FE}${HEALTHCHECK_PATH}"
-echo "Checking \$URL..."
-for i in \$(seq 1 30); do
-  STATUS=\$(curl --silent --output /dev/null --write-out '%{http_code}' "\$URL" || true)
-  if [ "\$STATUS" = "200" ]; then
-    echo "✓ Frontend health check passed on attempt \$i (HTTP 200)"
+PORT="$1"
+PATH_ENDPOINT="$2"
+CONTAINER="$3"
+
+URL="http://127.0.0.1:${PORT}${PATH_ENDPOINT}"
+echo "Checking $URL..."
+for i in $(seq 1 30); do
+  STATUS=$(curl --silent --output /dev/null --write-out '%{http_code}' "$URL" || true)
+  if [ "$STATUS" = "200" ]; then
+    echo "✓ Frontend health check passed on attempt $i (HTTP 200)"
     exit 0
   fi
-  echo "Attempt \$i: HTTP status \$STATUS. Retrying in 2 seconds..."
+  echo "Attempt $i: HTTP status $STATUS. Retrying in 2 seconds..."
   sleep 2
 done
 echo "✗ Frontend health check failed after 60 seconds"
-podman logs --tail 50 "${FRONTEND_CONTAINER}" 2>/dev/null || true
+podman logs --tail 50 "$CONTAINER" 2>/dev/null || true
 exit 1
 REMOTE
           '''
