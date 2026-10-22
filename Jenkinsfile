@@ -205,14 +205,16 @@ REMOTE
           sh '''
             set -eu
             SSH_OPTS="-i ${SSH_KEY} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR"
+            SECRET_B64=$(printf '%s' "${ACTUAL_SECRET}" | base64 | tr -d '\r\n')
 
             echo "=== Building Frontend Image with Baked API URL ==="
             ssh ${SSH_OPTS} ${SSH_USER}@${SERVER_HOST} "bash -s" <<REMOTE
 set -eu
+SECRET=\$(printf '%s' "${SECRET_B64}" | base64 -d)
 cd ${DEPLOY_DIR}
 podman build \
   --build-arg VITE_API_BASE_URL="${ACTUAL_API_URL}" \
-  --build-arg VITE_API_ENCRYPTION_SECRET="${ACTUAL_SECRET}" \
+  --build-arg VITE_API_ENCRYPTION_SECRET="\$SECRET" \
   -t "${FRONTEND_IMAGE}:${VERSION_TAG}" \
   -f Dockerfile \
   .
@@ -238,10 +240,12 @@ REMOTE
           sh '''
             set -eu
             SSH_OPTS="-i ${SSH_KEY} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR"
+            SECRET_B64=$(printf '%s' "${ACTUAL_SECRET}" | base64 | tr -d '\r\n')
 
             echo "=== Deploying Container with Host Network on Port ${PORT_FE} ==="
             ssh ${SSH_OPTS} ${SSH_USER}@${SERVER_HOST} "bash -s" <<REMOTE
 set -eu
+SECRET=\$(printf '%s' "${SECRET_B64}" | base64 -d)
 podman rm -f "${FRONTEND_CONTAINER}" 2>/dev/null || true
 podman run -d \
   --name "${FRONTEND_CONTAINER}" \
@@ -249,7 +253,7 @@ podman run -d \
   --network host \
   -e PORT="${PORT_FE}" \
   -e VITE_API_BASE_URL="${ACTUAL_API_URL}" \
-  -e VITE_API_ENCRYPTION_SECRET="${ACTUAL_SECRET}" \
+  -e VITE_API_ENCRYPTION_SECRET="\$SECRET" \
   "${FRONTEND_IMAGE}:${VERSION_TAG}"
 REMOTE
           '''
