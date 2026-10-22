@@ -14,5 +14,14 @@ export default defineConfig(({ mode }) => {
         '/api': env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:3004',
       },
     },
+    test: {
+      globals: true,
+      environment: 'happy-dom',
+      setupFiles: './src/test/setup.js',
+      coverage: {
+        provider: 'v8',
+        reporter: ['text', 'json', 'html', 'lcov'],
+      },
+    },
   }
 })
