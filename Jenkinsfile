@@ -208,14 +208,20 @@ REMOTE
             SECRET_B64=$(printf '%s' "${ACTUAL_SECRET}" | base64 | tr -d '\r\n')
 
             echo "=== Building Frontend Image with Baked API URL ==="
-            ssh ${SSH_OPTS} ${SSH_USER}@${SERVER_HOST} "bash -s" <<REMOTE
+            ssh ${SSH_OPTS} ${SSH_USER}@${SERVER_HOST} "bash -s -- \"${DEPLOY_DIR}\" \"${FRONTEND_IMAGE}:${VERSION_TAG}\" \"${ACTUAL_API_URL}\" \"${SECRET_B64}\"" <<'REMOTE'
 set -eu
-SECRET=\$(printf '%s' "${SECRET_B64}" | base64 -d)
-cd ${DEPLOY_DIR}
+DEPLOY_DIR="$1"
+IMAGE_TAG="$2"
+API_URL="$3"
+SECRET_B64="$4"
+
+SECRET=$(printf '%s' "$SECRET_B64" | base64 -d)
+
+cd "$DEPLOY_DIR"
 podman build \
-  --build-arg VITE_API_BASE_URL="${ACTUAL_API_URL}" \
-  --build-arg VITE_API_ENCRYPTION_SECRET="\$SECRET" \
-  -t "${FRONTEND_IMAGE}:${VERSION_TAG}" \
+  --build-arg VITE_API_BASE_URL="$API_URL" \
+  --build-arg VITE_API_ENCRYPTION_SECRET="$SECRET" \
+  -t "$IMAGE_TAG" \
   -f Dockerfile \
   .
 REMOTE
@@ -243,18 +249,25 @@ REMOTE
             SECRET_B64=$(printf '%s' "${ACTUAL_SECRET}" | base64 | tr -d '\r\n')
 
             echo "=== Deploying Container with Host Network on Port ${PORT_FE} ==="
-            ssh ${SSH_OPTS} ${SSH_USER}@${SERVER_HOST} "bash -s" <<REMOTE
+            ssh ${SSH_OPTS} ${SSH_USER}@${SERVER_HOST} "bash -s -- \"${FRONTEND_CONTAINER}\" \"${PORT_FE}\" \"${ACTUAL_API_URL}\" \"${SECRET_B64}\" \"${FRONTEND_IMAGE}:${VERSION_TAG}\"" <<'REMOTE'
 set -eu
-SECRET=\$(printf '%s' "${SECRET_B64}" | base64 -d)
-podman rm -f "${FRONTEND_CONTAINER}" 2>/dev/null || true
+CONTAINER="$1"
+PORT="$2"
+API_URL="$3"
+SECRET_B64="$4"
+IMAGE_TAG="$5"
+
+SECRET=$(printf '%s' "$SECRET_B64" | base64 -d)
+
+podman rm -f "$CONTAINER" 2>/dev/null || true
 podman run -d \
-  --name "${FRONTEND_CONTAINER}" \
+  --name "$CONTAINER" \
   --restart always \
   --network host \
-  -e PORT="${PORT_FE}" \
-  -e VITE_API_BASE_URL="${ACTUAL_API_URL}" \
-  -e VITE_API_ENCRYPTION_SECRET="\$SECRET" \
-  "${FRONTEND_IMAGE}:${VERSION_TAG}"
+  -e PORT="$PORT" \
+  -e VITE_API_BASE_URL="$API_URL" \
+  -e VITE_API_ENCRYPTION_SECRET="$SECRET" \
+  "$IMAGE_TAG"
 REMOTE
           '''
         }
