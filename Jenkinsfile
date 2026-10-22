@@ -26,32 +26,26 @@ pipeline {
       description: 'Backend API URL baked into frontend build',
       trim: true
     )
-    string(
-      name: 'API_SECRET',
-      defaultValue: 'portfolio-vault-key-2026-secure-secret-token',
-      description: 'End-to-end encryption secret token',
-      trim: true
-    )
   }
 
   environment {
-    SERVER_HOST        = '100.87.90.67'
-    SERVER_USER        = 'devlabhub'
-    SSH_CREDENTIAL     = 'homeserver-ssh'
-    SONAR_CREDENTIAL   = 'sonar-devlabhub'
+    SERVER_HOST            = '100.87.90.67'
+    SERVER_USER            = 'devlabhub'
+    SSH_CREDENTIAL         = 'homeserver-ssh'
+    SONAR_CREDENTIAL       = 'sonar-devlabhub'
+    API_SECRET_CREDENTIAL  = 'portfolio-api-secret'
 
-    APP_NAME           = 'portfolio-frontend'
-    DEPLOY_DIR         = '/home/devlabhub/projects/portfolio-frontend'
-    FRONTEND_CONTAINER = 'portfolio-frontend'
-    FRONTEND_IMAGE     = 'portfolio-frontend'
+    APP_NAME               = 'portfolio-frontend'
+    DEPLOY_DIR             = '/home/devlabhub/projects/portfolio-frontend'
+    FRONTEND_CONTAINER     = 'portfolio-frontend'
+    FRONTEND_IMAGE         = 'portfolio-frontend'
 
-    VERSION_TAG        = "${params.VERSION}"
-    PORT_FE            = "${params.PORT}"
-    ACTUAL_API_URL     = "${params.API_BASE_URL}"
-    ACTUAL_SECRET      = "${params.API_SECRET}"
+    VERSION_TAG            = "${params.VERSION}"
+    PORT_FE                = "${params.PORT}"
+    ACTUAL_API_URL         = "${params.API_BASE_URL}"
 
-    SONAR_HOST_URL     = 'http://127.0.0.1:9002'
-    HEALTHCHECK_PATH   = '/healthz'
+    SONAR_HOST_URL         = 'http://127.0.0.1:9002'
+    HEALTHCHECK_PATH       = '/healthz'
   }
 
   stages {
@@ -196,6 +190,10 @@ REMOTE
             credentialsId: env.SSH_CREDENTIAL,
             keyFileVariable: 'SSH_KEY',
             usernameVariable: 'SSH_USER'
+          ),
+          string(
+            credentialsId: env.API_SECRET_CREDENTIAL,
+            variable: 'ACTUAL_SECRET'
           )
         ]) {
           sh '''
@@ -225,6 +223,10 @@ REMOTE
             credentialsId: env.SSH_CREDENTIAL,
             keyFileVariable: 'SSH_KEY',
             usernameVariable: 'SSH_USER'
+          ),
+          string(
+            credentialsId: env.API_SECRET_CREDENTIAL,
+            variable: 'ACTUAL_SECRET'
           )
         ]) {
           sh '''
