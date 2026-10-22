@@ -160,9 +160,11 @@ REMOTE
             echo "=== Running SonarQube Scanner CLI on Homeserver ==="
             ssh ${SSH_OPTS} ${SSH_USER}@${SERVER_HOST} "bash -s" <<REMOTE
 set -eu
+rm -rf ${DEPLOY_DIR}/.scannerwork
 mkdir -p ${DEPLOY_DIR}/.scannerwork
+chmod -R 777 ${DEPLOY_DIR}/.scannerwork
 
-podman run --rm --network host \
+podman run --rm --network host --user 0:0 \
   -v ${DEPLOY_DIR}:/usr/src:Z \
   -w /usr/src \
   -e SONAR_HOST_URL="${SONAR_HOST_URL}" \
@@ -177,6 +179,11 @@ REMOTE
 
             echo "=== Pulling SonarQube report-task.txt to Jenkins workspace ==="
             ssh ${SSH_OPTS} ${SSH_USER}@${SERVER_HOST} "tar -czf - -C ${DEPLOY_DIR} .scannerwork 2>/dev/null" | tar -xzf - 2>/dev/null || true
+
+            if [ -f .scannerwork/report-task.txt ]; then
+              echo "✓ SonarQube report-task.txt retrieved successfully:"
+              cat .scannerwork/report-task.txt
+            fi
           '''
         }
       }
