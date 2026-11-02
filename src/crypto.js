@@ -1,7 +1,3 @@
-const DEFAULT_SECRET = 'portfolio-vault-key-2026-secure-secret-token'
-
-let cachedCryptoKey = null
-
 export function getApiBaseUrl() {
   const envUrl =
     (typeof window !== 'undefined' && window.__ENV__ && window.__ENV__.VITE_API_BASE_URL) ||
@@ -25,35 +21,71 @@ export function resolveMediaUrl(url) {
   return getApiUrl(url)
 }
 
-function getSecret() {
-  return (
-    (typeof window !== 'undefined' &&
-      window.__ENV__ &&
-      window.__ENV__.VITE_API_ENCRYPTION_SECRET) ||
-    (typeof import.meta !== 'undefined' &&
-      import.meta.env &&
-      import.meta.env.VITE_API_ENCRYPTION_SECRET) ||
-    DEFAULT_SECRET
-  )
+const KDF_INFO = 'portfolio-e2e-v1'
+const SESSION_ERROR_MARKER = 'sesi enkripsi'
+
+let cachedSession = null
+let pendingSession = null
+
+export function resetSession() {
+  cachedSession = null
+  pendingSession = null
 }
 
-export async function getEncryptionKey() {
-  if (cachedCryptoKey) return cachedCryptoKey
+async function createSession() {
+  const subtle = window.crypto.subtle
+  const pair = await subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveBits'])
+  const rawPub = new Uint8Array(await subtle.exportKey('raw', pair.publicKey))
 
-  const secret = getSecret()
-  const enc = new TextEncoder()
-  const rawKey = enc.encode(secret)
-  const hashBuffer = await window.crypto.subtle.digest('SHA-256', rawKey)
+  const res = await fetch(getApiUrl('/api/session'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ publicKey: uint8ToBase64(rawPub) }),
+  })
+  if (!res.ok) {
+    throw new Error(`Gagal membuat sesi enkripsi (${res.status})`)
+  }
+  const { sessionId, publicKey, expiresIn } = await res.json()
 
-  cachedCryptoKey = await window.crypto.subtle.importKey(
+  const serverPub = await subtle.importKey(
     'raw',
-    hashBuffer,
-    { name: 'AES-GCM' },
+    base64ToUint8(publicKey),
+    { name: 'ECDH', namedCurve: 'P-256' },
+    false,
+    [],
+  )
+  const shared = await subtle.deriveBits({ name: 'ECDH', public: serverPub }, pair.privateKey, 256)
+  const hkdfKey = await subtle.importKey('raw', shared, 'HKDF', false, ['deriveKey'])
+  const salt = base64ToUint8(sessionId.replace(/-/g, '+').replace(/_/g, '/'))
+  const key = await subtle.deriveKey(
+    { name: 'HKDF', hash: 'SHA-256', salt, info: new TextEncoder().encode(KDF_INFO) },
+    hkdfKey,
+    { name: 'AES-GCM', length: 256 },
     false,
     ['encrypt', 'decrypt'],
   )
 
-  return cachedCryptoKey
+  const ttlMs = Math.max(((Number(expiresIn) || 1800) - 60) * 1000, 30000)
+  return { id: sessionId, key, expiresAt: Date.now() + ttlMs }
+}
+
+export async function getSession() {
+  if (cachedSession && cachedSession.expiresAt > Date.now()) return cachedSession
+  if (!pendingSession) {
+    pendingSession = createSession()
+      .then((session) => {
+        cachedSession = session
+        return session
+      })
+      .finally(() => {
+        pendingSession = null
+      })
+  }
+  return pendingSession
+}
+
+export async function getEncryptionKey() {
+  return (await getSession()).key
 }
 
 export function uint8ToBase64(bytes) {
@@ -125,9 +157,11 @@ export async function decryptData(envelope) {
   }
 }
 
-export async function apiFetch(url, options = {}) {
+export async function apiFetch(url, options = {}, retried = false) {
   const opts = { ...options }
   const headers = new Headers(opts.headers || {})
+  const session = await getSession()
+  headers.set('X-Session-Id', session.id)
 
   // Encrypt JSON body if provided as a plain object/array
   if (
@@ -152,11 +186,15 @@ export async function apiFetch(url, options = {}) {
 
   const contentType = response.headers.get('content-type') || ''
   if (!contentType.includes('application/json')) {
+    const text = await response.text()
     if (!response.ok) {
-      const errText = await response.text()
-      throw new Error(errText || `Server merespons status ${response.status}`)
+      if (!retried && response.status === 401 && text.toLowerCase().includes(SESSION_ERROR_MARKER)) {
+        resetSession()
+        return apiFetch(url, options, true)
+      }
+      throw new Error(text || `Server merespons status ${response.status}`)
     }
-    return response.text()
+    return text
   }
 
   const rawJson = await response.json()

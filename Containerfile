@@ -14,9 +14,7 @@ COPY . .
 
 # Build-time environment arguments baked into Vite build
 ARG VITE_API_BASE_URL="https://api-portofolio.devlabhub.id"
-ARG VITE_API_ENCRYPTION_SECRET="portfolio-vault-key-2026-secure-secret-token"
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
-ENV VITE_API_ENCRYPTION_SECRET=${VITE_API_ENCRYPTION_SECRET}
 
 RUN npm run build
 

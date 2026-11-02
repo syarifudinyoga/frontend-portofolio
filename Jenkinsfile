@@ -32,7 +32,6 @@ pipeline {
     SERVER_USER            = 'devlabhub'
     SSH_CREDENTIAL         = 'homeserver-ssh'
     SONAR_CREDENTIAL       = 'sonar-devlabhub'
-    API_SECRET_CREDENTIAL  = 'portfolio-api-secret'
 
     APP_NAME               = 'portfolio-frontend'
     DEPLOY_DIR             = '/home/devlabhub/projects/portfolio-frontend'
@@ -196,31 +195,22 @@ REMOTE
             credentialsId: env.SSH_CREDENTIAL,
             keyFileVariable: 'SSH_KEY',
             usernameVariable: 'SSH_USER'
-          ),
-          string(
-            credentialsId: env.API_SECRET_CREDENTIAL,
-            variable: 'ACTUAL_SECRET'
           )
         ]) {
           sh '''
             set -eu
             SSH_OPTS="-i ${SSH_KEY} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR"
-            SECRET_B64=$(printf '%s' "${ACTUAL_SECRET}" | base64 | tr -d '\r\n')
 
             echo "=== Building Frontend Image with Baked API URL ==="
-            ssh ${SSH_OPTS} ${SSH_USER}@${SERVER_HOST} "bash -s -- \"${DEPLOY_DIR}\" \"${FRONTEND_IMAGE}:${VERSION_TAG}\" \"${ACTUAL_API_URL}\" \"${SECRET_B64}\"" <<'REMOTE'
+            ssh ${SSH_OPTS} ${SSH_USER}@${SERVER_HOST} "bash -s -- \"${DEPLOY_DIR}\" \"${FRONTEND_IMAGE}:${VERSION_TAG}\" \"${ACTUAL_API_URL}\"" <<'REMOTE'
 set -eu
 DEPLOY_DIR="$1"
 IMAGE_TAG="$2"
 API_URL="$3"
-SECRET_B64="$4"
-
-SECRET=$(printf '%s' "$SECRET_B64" | base64 -d)
 
 cd "$DEPLOY_DIR"
 podman build \
   --build-arg VITE_API_BASE_URL="$API_URL" \
-  --build-arg VITE_API_ENCRYPTION_SECRET="$SECRET" \
   -t "$IMAGE_TAG" \
   -f Dockerfile \
   .
@@ -237,27 +227,19 @@ REMOTE
             credentialsId: env.SSH_CREDENTIAL,
             keyFileVariable: 'SSH_KEY',
             usernameVariable: 'SSH_USER'
-          ),
-          string(
-            credentialsId: env.API_SECRET_CREDENTIAL,
-            variable: 'ACTUAL_SECRET'
           )
         ]) {
           sh '''
             set -eu
             SSH_OPTS="-i ${SSH_KEY} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR"
-            SECRET_B64=$(printf '%s' "${ACTUAL_SECRET}" | base64 | tr -d '\r\n')
 
             echo "=== Deploying Container with Host Network on Port ${PORT_FE} ==="
-            ssh ${SSH_OPTS} ${SSH_USER}@${SERVER_HOST} "bash -s -- \"${FRONTEND_CONTAINER}\" \"${PORT_FE}\" \"${ACTUAL_API_URL}\" \"${SECRET_B64}\" \"${FRONTEND_IMAGE}:${VERSION_TAG}\"" <<'REMOTE'
+            ssh ${SSH_OPTS} ${SSH_USER}@${SERVER_HOST} "bash -s -- \"${FRONTEND_CONTAINER}\" \"${PORT_FE}\" \"${ACTUAL_API_URL}\" \"${FRONTEND_IMAGE}:${VERSION_TAG}\"" <<'REMOTE'
 set -eu
 CONTAINER="$1"
 PORT="$2"
 API_URL="$3"
-SECRET_B64="$4"
-IMAGE_TAG="$5"
-
-SECRET=$(printf '%s' "$SECRET_B64" | base64 -d)
+IMAGE_TAG="$4"
 
 podman rm -f "$CONTAINER" 2>/dev/null || true
 podman run -d \
@@ -266,7 +248,6 @@ podman run -d \
   --network host \
   -e PORT="$PORT" \
   -e VITE_API_BASE_URL="$API_URL" \
-  -e VITE_API_ENCRYPTION_SECRET="$SECRET" \
   "$IMAGE_TAG"
 REMOTE
           '''

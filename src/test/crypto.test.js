@@ -5,17 +5,89 @@ import {
   resolveMediaUrl,
   uint8ToBase64,
   base64ToUint8,
+  getSession,
   getEncryptionKey,
   encryptData,
   decryptData,
   apiFetch,
+  resetSession,
 } from '../crypto.js'
+
+const subtle = globalThis.crypto.subtle
+
+// Fake backend that performs the same ECDH + HKDF handshake as the Go server.
+function installFakeServer(onRequest) {
+  const server = { sessions: new Map(), handshakes: 0 }
+  server.encrypt = async (id, data) => {
+    const iv = globalThis.crypto.getRandomValues(new Uint8Array(12))
+    const cipher = await subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      server.sessions.get(id),
+      new TextEncoder().encode(JSON.stringify(data)),
+    )
+    return {
+      encrypted: true,
+      iv: uint8ToBase64(iv),
+      data: uint8ToBase64(new Uint8Array(cipher)),
+    }
+  }
+  server.decrypt = async (id, env) => {
+    const plain = await subtle.decrypt(
+      { name: 'AES-GCM', iv: base64ToUint8(env.iv) },
+      server.sessions.get(id),
+      base64ToUint8(env.data),
+    )
+    return JSON.parse(new TextDecoder().decode(plain))
+  }
+
+  globalThis.fetch = vi.fn(async (url, opts = {}) => {
+    if (String(url).endsWith('/api/session')) {
+      server.handshakes++
+      const { publicKey } = JSON.parse(opts.body)
+      const pair = await subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits'])
+      const clientPub = await subtle.importKey(
+        'raw',
+        base64ToUint8(publicKey),
+        { name: 'ECDH', namedCurve: 'P-256' },
+        false,
+        [],
+      )
+      const shared = await subtle.deriveBits({ name: 'ECDH', public: clientPub }, pair.privateKey, 256)
+      const saltBytes = globalThis.crypto.getRandomValues(new Uint8Array(16))
+      const hkdf = await subtle.importKey('raw', shared, 'HKDF', false, ['deriveKey'])
+      const key = await subtle.deriveKey(
+        {
+          name: 'HKDF',
+          hash: 'SHA-256',
+          salt: saltBytes,
+          info: new TextEncoder().encode('portfolio-e2e-v1'),
+        },
+        hkdf,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['encrypt', 'decrypt'],
+      )
+      const id = uint8ToBase64(saltBytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+      server.sessions.set(id, key)
+      const rawPub = new Uint8Array(await subtle.exportKey('raw', pair.publicKey))
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ sessionId: id, publicKey: uint8ToBase64(rawPub), expiresIn: 1800 }),
+      }
+    }
+    const sessionId = new Headers(opts.headers).get('X-Session-Id')
+    return onRequest(url, opts, sessionId, server)
+  })
+  return server
+}
 
 describe('crypto.js utilities', () => {
   const originalEnv = window.__ENV__
 
   beforeEach(() => {
     window.__ENV__ = {}
+    resetSession()
   })
 
   afterEach(() => {
@@ -101,30 +173,43 @@ describe('crypto.js utilities', () => {
     })
   })
 
-  describe('Encryption and Decryption', () => {
-    it('generates a valid CryptoKey', async () => {
+  describe('Session and encryption', () => {
+    it('derives a non-extractable AES key via ECDH handshake', async () => {
+      const server = installFakeServer(async () => ({}))
       const key = await getEncryptionKey()
-      expect(key).toBeDefined()
       expect(key.type).toBe('secret')
+      expect(key.extractable).toBe(false)
+      expect(server.sessions.size).toBe(1)
+    })
+
+    it('reuses a single session across calls and concurrent requests', async () => {
+      const server = installFakeServer(async () => ({}))
+      const [a, b] = await Promise.all([getSession(), getSession()])
+      expect(a).toBe(b)
+      await getSession()
+      expect(server.handshakes).toBe(1)
+    })
+
+    it('fails when the handshake is rejected', async () => {
+      globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 503 })
+      await expect(getSession()).rejects.toThrow('Gagal membuat sesi enkripsi (503)')
     })
 
     it('encrypts and decrypts object data', async () => {
+      installFakeServer(async () => ({}))
       const payload = { message: 'Secret data', count: 42, active: true }
       const encrypted = await encryptData(payload)
 
       expect(encrypted.encrypted).toBe(true)
       expect(typeof encrypted.iv).toBe('string')
       expect(typeof encrypted.data).toBe('string')
-
-      const decrypted = await decryptData(encrypted)
-      expect(decrypted).toEqual(payload)
+      expect(await decryptData(encrypted)).toEqual(payload)
     })
 
     it('encrypts and decrypts raw string data', async () => {
+      installFakeServer(async () => ({}))
       const rawText = 'Plain simple text string'
-      const encrypted = await encryptData(rawText)
-      const decrypted = await decryptData(encrypted)
-      expect(decrypted).toBe(rawText)
+      expect(await decryptData(await encryptData(rawText))).toBe(rawText)
     })
 
     it('returns input unchanged if decryptData receives invalid envelope', async () => {
@@ -137,51 +222,41 @@ describe('crypto.js utilities', () => {
 
   describe('apiFetch', () => {
     it('handles 204 No Content responses', async () => {
-      globalThis.fetch = vi.fn().mockResolvedValue({
-        status: 204,
-        headers: new Headers(),
-      })
-
-      const res = await apiFetch('/api/delete-item', { method: 'DELETE' })
-      expect(res).toBeNull()
+      installFakeServer(async () => ({ status: 204, headers: new Headers() }))
+      expect(await apiFetch('/api/delete-item', { method: 'DELETE' })).toBeNull()
     })
 
     it('handles non-JSON successful response', async () => {
-      globalThis.fetch = vi.fn().mockResolvedValue({
+      installFakeServer(async () => ({
         status: 200,
         ok: true,
         headers: new Headers({ 'content-type': 'text/plain' }),
         text: () => Promise.resolve('plain text response'),
-      })
-
-      const res = await apiFetch('/api/health')
-      expect(res).toBe('plain text response')
+      }))
+      expect(await apiFetch('/api/health')).toBe('plain text response')
     })
 
     it('throws error on non-JSON error response', async () => {
-      globalThis.fetch = vi.fn().mockResolvedValue({
+      installFakeServer(async () => ({
         status: 500,
         ok: false,
         headers: new Headers({ 'content-type': 'text/plain' }),
         text: () => Promise.resolve('Internal server fault'),
-      })
-
+      }))
       await expect(apiFetch('/api/fail')).rejects.toThrow('Internal server fault')
     })
 
-    it('encrypts payload and decrypts encrypted JSON response', async () => {
+    it('sends session header, encrypts payload and decrypts response', async () => {
       let sentBody = null
-
-      globalThis.fetch = vi.fn().mockImplementation(async (url, opts) => {
-        sentBody = JSON.parse(opts.body)
-        const responseData = { success: true, user: 'Admin' }
-        const encryptedResponse = await encryptData(responseData)
-
+      let sentSession = null
+      installFakeServer(async (url, opts, sessionId, server) => {
+        sentSession = sessionId
+        sentBody = await server.decrypt(sessionId, JSON.parse(opts.body))
         return {
           status: 200,
           ok: true,
           headers: new Headers({ 'content-type': 'application/json' }),
-          json: () => Promise.resolve(encryptedResponse),
+          json: async () => server.encrypt(sessionId, { success: true, user: 'Admin' }),
         }
       })
 
@@ -190,25 +265,43 @@ describe('crypto.js utilities', () => {
         body: { username: 'root', pass: 'secret' },
       })
 
-      expect(sentBody).toBeDefined()
-      expect(sentBody.encrypted).toBe(true)
-      expect(sentBody.iv).toBeDefined()
-      expect(sentBody.data).toBeDefined()
+      expect(sentSession).toBeTruthy()
+      expect(sentBody).toEqual({ username: 'root', pass: 'secret' })
       expect(result).toEqual({ success: true, user: 'Admin' })
     })
 
     it('throws error when JSON response is not ok', async () => {
-      globalThis.fetch = vi.fn().mockImplementation(async () => {
-        const errorData = await encryptData({ message: 'Invalid credentials' })
+      installFakeServer(async (url, opts, sessionId, server) => ({
+        status: 401,
+        ok: false,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => server.encrypt(sessionId, { message: 'Invalid credentials' }),
+      }))
+      await expect(apiFetch('/api/auth', { method: 'POST' })).rejects.toThrow('Invalid credentials')
+    })
+
+    it('re-establishes the session once when the server reports it expired', async () => {
+      let calls = 0
+      const server = installFakeServer(async (url, opts, sessionId, srv) => {
+        calls++
+        if (calls === 1) {
+          return {
+            status: 401,
+            ok: false,
+            headers: new Headers({ 'content-type': 'text/plain' }),
+            text: async () => 'sesi enkripsi tidak ditemukan atau kedaluwarsa',
+          }
+        }
         return {
-          status: 401,
-          ok: false,
+          status: 200,
+          ok: true,
           headers: new Headers({ 'content-type': 'application/json' }),
-          json: () => Promise.resolve(errorData),
+          json: async () => srv.encrypt(sessionId, { ok: true }),
         }
       })
 
-      await expect(apiFetch('/api/auth', { method: 'POST' })).rejects.toThrow('Invalid credentials')
+      expect(await apiFetch('/api/portfolio')).toEqual({ ok: true })
+      expect(server.handshakes).toBe(2)
     })
   })
 })
